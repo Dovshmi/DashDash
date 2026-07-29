@@ -12,7 +12,7 @@ const STORAGE = {
   drawing: 'work-tools:drawing',
   layout: 'work-tools:dashboard-layout-v3',
   widgets: 'work-tools:active-widgets-v1',
-  mobileLayout: 'work-tools:mobile-dashboard-layout-v1',
+  mobileLayout: 'work-tools:mobile-dashboard-layout-v2',
   mobileWidgets: 'work-tools:mobile-active-widgets-v1',
   timeAlert: 'work-tools:time-alert-settings-v1',
 };
@@ -33,10 +33,10 @@ const DASHBOARD_LAYOUT = [
 
 const MOBILE_WIDGET_IDS = ['timer', 'notes', 'drawing'];
 const MOBILE_DASHBOARD_LAYOUT = [
-  { i: 'timer', x: 0, y: 0, w: 1, h: 11, minW: 1, minH: 7 },
-  { i: 'notes', x: 0, y: 11, w: 1, h: 14, minW: 1, minH: 6 },
-  { i: 'drawing', x: 0, y: 25, w: 1, h: 14, minW: 1, minH: 10 },
-  { i: 'translate', x: 0, y: 39, w: 1, h: 11, minW: 1, minH: 7 },
+  { i: 'timer', x: 0, y: 0, w: 4, h: 11, minW: 1, minH: 7 },
+  { i: 'notes', x: 0, y: 11, w: 4, h: 14, minW: 1, minH: 6 },
+  { i: 'drawing', x: 0, y: 25, w: 4, h: 14, minW: 1, minH: 10 },
+  { i: 'translate', x: 0, y: 39, w: 4, h: 11, minW: 1, minH: 7 },
 ];
 
 function load(key, fallback) {
@@ -301,9 +301,9 @@ export default function App() {
       {mounted && <ReactGridLayout
         layout={currentLayout}
         width={width}
-        gridConfig={isMobile ? { cols: 1, rowHeight: 28, margin: [12, 12], containerPadding: [0, 0] } : { cols: 12, rowHeight: 32, margin: [14, 14], containerPadding: [0, 0] }}
+        gridConfig={isMobile ? { cols: 4, rowHeight: 28, margin: [12, 12], containerPadding: [0, 0] } : { cols: 12, rowHeight: 32, margin: [14, 14], containerPadding: [0, 0] }}
         dragConfig={{ enabled: true, bounded: true, handle: '.drag-handle' }}
-        resizeConfig={{ enabled: !isMobile, handles: ['se'] }}
+        resizeConfig={{ enabled: true, handles: ['se'] }}
         compactor={verticalCompactor}
         onLayoutChange={isMobile ? setMobileLayout : setLayout}
         className="dashboard-grid"
