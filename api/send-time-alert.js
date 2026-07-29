@@ -1,0 +1,55 @@
+import nodemailer from 'nodemailer';
+
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function isAllowedOrigin(request) {
+  const origin = request.headers.origin;
+  const allowedOrigins = [
+    process.env.APP_ORIGIN,
+    process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null,
+  ].filter(Boolean);
+  return Boolean(origin) && allowedOrigins.includes(origin);
+}
+
+export default async function handler(request, response) {
+  if (request.method !== 'POST') {
+    response.setHeader('Allow', 'POST');
+    return response.status(405).json({ error: 'Method not allowed' });
+  }
+
+  if (!isAllowedOrigin(request)) {
+    return response.status(403).json({ error: 'Origin not allowed' });
+  }
+
+  const { recipientEmail, thresholdMinutes } = request.body ?? {};
+  const recipient = typeof recipientEmail === 'string' ? recipientEmail.trim() : '';
+  const threshold = Number(thresholdMinutes);
+
+  if (!emailPattern.test(recipient) || !Number.isFinite(threshold) || threshold <= 0 || threshold > 1_440) {
+    return response.status(400).json({ error: 'Invalid alert request' });
+  }
+
+  const user = process.env.GMAIL_SMTP_USER;
+  const pass = process.env.GMAIL_SMTP_APP_PASSWORD;
+  if (!user || !pass) {
+    return response.status(503).json({ error: 'Email alerts are not configured yet' });
+  }
+
+  try {
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: { user, pass },
+    });
+
+    await transporter.sendMail({
+      from: process.env.MAIL_FROM || `DashDash <${user}>`,
+      to: recipient,
+      subject: `DashDash — עברו ${threshold} דקות של זמן אישי`,
+      text: `עברו ${threshold} דקות מאז שהתחלת זמן אישי ב-DashDash.`,
+    });
+    return response.status(200).json({ sent: true });
+  } catch (error) {
+    console.error('Time alert email failed', error);
+    return response.status(502).json({ error: 'Unable to send the email alert' });
+  }
+}

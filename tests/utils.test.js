@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   createDefaultDashboardLayout,
+  isValidEmail,
+  shouldSendPersonalTimeAlert,
   formatDuration,
   formatPersonalTotal,
   formatSessionDuration,
@@ -75,6 +77,28 @@ describe('history helpers', () => {
   it('removes only the history item selected by its id', () => {
     const history = [{ id: 'first' }, { id: 'remove-me' }, { id: 'last' }];
     expect(removeHistoryItem(history, 'remove-me')).toEqual([{ id: 'first' }, { id: 'last' }]);
+  });
+});
+
+describe('personal-time email alerts', () => {
+  it('accepts a basic recipient email and rejects malformed values', () => {
+    expect(isValidEmail('user@example.com')).toBe(true);
+    expect(isValidEmail('not-an-email')).toBe(false);
+  });
+
+  it('sends once when the running timer reaches the selected minute threshold', () => {
+    expect(shouldSendPersonalTimeAlert({
+      elapsedMilliseconds: 10 * 60_000,
+      thresholdMinutes: 10,
+      recipientEmail: 'user@example.com',
+      alreadySent: false,
+    })).toBe(true);
+    expect(shouldSendPersonalTimeAlert({
+      elapsedMilliseconds: 11 * 60_000,
+      thresholdMinutes: 10,
+      recipientEmail: 'user@example.com',
+      alreadySent: true,
+    })).toBe(false);
   });
 });
 

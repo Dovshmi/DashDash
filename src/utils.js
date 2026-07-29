@@ -26,6 +26,19 @@ export function formatDuration(milliseconds) {
   return `${hours}:${minutes}:${seconds}`;
 }
 
+export function isValidEmail(value) {
+  return typeof value === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+}
+
+export function shouldSendPersonalTimeAlert({ elapsedMilliseconds, thresholdMinutes, recipientEmail, alreadySent }) {
+  return !alreadySent
+    && Number.isFinite(elapsedMilliseconds)
+    && Number.isFinite(thresholdMinutes)
+    && thresholdMinutes > 0
+    && elapsedMilliseconds >= thresholdMinutes * 60_000
+    && isValidEmail(recipientEmail);
+}
+
 export function createDefaultDashboardLayout(activeWidgetIds, templates) {
   const templatesById = new Map(templates.map((item) => [item.i, item]));
   const primaryWidgets = templates.filter((item) => activeWidgetIds.includes(item.i)).map((item) => ({ ...item }));

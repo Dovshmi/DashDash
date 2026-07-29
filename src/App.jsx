@@ -3,7 +3,7 @@ import ReactGridLayout, { useContainerWidth } from 'react-grid-layout';
 import { verticalCompactor } from 'react-grid-layout/core';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
-import { createDefaultDashboardLayout, formatDuration, formatPersonalTotal, formatSessionDuration, keyboardTranslate, normalizeDashboardLayout, normalizeWidgetIds, removeHistoryItem, toDateKey } from './utils.js';
+import { createDefaultDashboardLayout, formatDuration, formatPersonalTotal, formatSessionDuration, keyboardTranslate, normalizeDashboardLayout, normalizeWidgetIds, removeHistoryItem, shouldSendPersonalTimeAlert, toDateKey } from './utils.js';
 
 const STORAGE = {
   notes: 'work-tools:notes',
@@ -12,6 +12,7 @@ const STORAGE = {
   drawing: 'work-tools:drawing',
   layout: 'work-tools:dashboard-layout-v3',
   widgets: 'work-tools:active-widgets-v1',
+  timeAlert: 'work-tools:time-alert-settings-v1',
 };
 const BSMART_URL = 'https://smartest/';
 const WIDGETS = [
@@ -131,6 +132,12 @@ export default function App() {
   const [translations, setTranslations] = useState(() => load(STORAGE.translations, []));
   const [startedAt, setStartedAt] = useState(null);
   const [now, setNow] = useState(Date.now());
+  const [timeAlert, setTimeAlert] = useState(() => {
+    const saved = load(STORAGE.timeAlert, { recipientEmail: '', thresholdMinutes: 15 });
+    return { recipientEmail: saved?.recipientEmail ?? '', thresholdMinutes: Number(saved?.thresholdMinutes) || 15 };
+  });
+  const [timeAlertStatus, setTimeAlertStatus] = useState('');
+  const sentAlertSessionRef = useRef(null);
   const [translation, setTranslation] = useState('');
   const [message, setMessage] = useState('');
   const [showTranslationHistory, setShowTranslationHistory] = useState(false);
@@ -145,6 +152,7 @@ export default function App() {
   useEffect(() => { localStorage.setItem(STORAGE.translations, JSON.stringify(translations)); }, [translations]);
   useEffect(() => { localStorage.setItem(STORAGE.layout, JSON.stringify(layout)); }, [layout]);
   useEffect(() => { localStorage.setItem(STORAGE.widgets, JSON.stringify(activeWidgetIds)); }, [activeWidgetIds]);
+  useEffect(() => { localStorage.setItem(STORAGE.timeAlert, JSON.stringify(timeAlert)); }, [timeAlert]);
   useEffect(() => {
     if (!startedAt) return undefined;
     const timer = window.setInterval(() => setNow(Date.now()), 1000);
@@ -154,6 +162,33 @@ export default function App() {
   const today = toDateKey(new Date());
   const todaySessions = sessions.filter((session) => toDateKey(new Date(session.startedAt)) === today);
   const elapsed = startedAt ? now - new Date(startedAt).getTime() : 0;
+
+  useEffect(() => {
+    if (!startedAt) {
+      sentAlertSessionRef.current = null;
+      setTimeAlertStatus('');
+      return;
+    }
+    if (!shouldSendPersonalTimeAlert({
+      elapsedMilliseconds: elapsed,
+      thresholdMinutes: timeAlert.thresholdMinutes,
+      recipientEmail: timeAlert.recipientEmail,
+      alreadySent: sentAlertSessionRef.current === startedAt,
+    })) return;
+
+    sentAlertSessionRef.current = startedAt;
+    setTimeAlertStatus('שולח התראה למייל...');
+    fetch('/api/send-time-alert', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(timeAlert),
+    })
+      .then(async (response) => {
+        if (!response.ok) throw new Error((await response.json().catch(() => ({}))).error);
+        setTimeAlertStatus('התראת המייל נשלחה.');
+      })
+      .catch(() => setTimeAlertStatus('לא הצלחנו לשלוח התראה. בדוק את הגדרת שירות המייל.'));
+  }, [elapsed, startedAt, timeAlert]);
   const availableWidgets = WIDGETS.filter((widget) => widget.repeatable || !activeWidgetIds.includes(widget.id));
 
   function addWidget(type) {
@@ -200,6 +235,8 @@ export default function App() {
 
   function toggleTimer() {
     if (!startedAt) {
+      sentAlertSessionRef.current = null;
+      setTimeAlertStatus('');
       setStartedAt(new Date().toISOString());
       setNow(Date.now());
       return;
@@ -261,6 +298,13 @@ export default function App() {
         <div className="timer">{formatDuration(elapsed)}</div>
         <button className={startedAt ? 'stop-button' : 'primary-button'} onClick={toggleTimer}>{startedAt ? 'סיים זמן אישי' : 'התחל זמן אישי'}</button>
         <div className="summary"><span>סה״כ אישי היום</span><strong>{formatPersonalTotal(todaySessions)}</strong></div>
+        <div className="time-alert-settings">
+          <h3>התראת מייל</h3>
+          <label>כתובת מייל<input type="email" value={timeAlert.recipientEmail} onChange={(event) => setTimeAlert((current) => ({ ...current, recipientEmail: event.target.value }))} placeholder="you@example.com" /></label>
+          <label>שלח אחרי<input type="number" min="1" max="1440" step="1" value={timeAlert.thresholdMinutes} onChange={(event) => setTimeAlert((current) => ({ ...current, thresholdMinutes: Number(event.target.value) }))} /><span>דקות</span></label>
+          <p>ההתראה נשלחת פעם אחת בזמן שהאתר פתוח.</p>
+          {timeAlertStatus && <p className="time-alert-status" role="status">{timeAlertStatus}</p>}
+        </div>
         <button className="history-toggle" onClick={() => setShowTimerHistory((visible) => !visible)} aria-expanded={showTimerHistory}>
           <span className="sr-only">היסטוריית זמן אישי ({sessions.length})</span><span className={showTimerHistory ? 'arrow open' : 'arrow'}>⌄</span>
         </button>
