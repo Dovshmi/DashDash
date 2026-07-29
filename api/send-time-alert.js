@@ -13,13 +13,15 @@ export default async function handler(request, response) {
     return response.status(403).json({ error: 'Origin not allowed' });
   }
 
-  const { recipientEmail, thresholdMinutes } = request.body ?? {};
+  const { recipientEmail, thresholdSeconds, thresholdMinutes } = request.body ?? {};
   const recipient = typeof recipientEmail === 'string' ? recipientEmail.trim() : '';
-  const threshold = Number(thresholdMinutes);
+  const seconds = Number(thresholdSeconds) || Number(thresholdMinutes) * 60;
 
-  if (!emailPattern.test(recipient) || !Number.isFinite(threshold) || threshold <= 0 || threshold > 1_440) {
+  if (!emailPattern.test(recipient) || !Number.isFinite(seconds) || seconds <= 0 || seconds > 86_400) {
     return response.status(400).json({ error: 'Invalid alert request' });
   }
+
+  const threshold = `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
 
   const user = process.env.GMAIL_SMTP_USER;
   const pass = process.env.GMAIL_SMTP_APP_PASSWORD;
@@ -36,8 +38,8 @@ export default async function handler(request, response) {
     await transporter.sendMail({
       from: process.env.MAIL_FROM || `DashDash <${user}>`,
       to: recipient,
-      subject: `DashDash — עברו ${threshold} דקות של זמן אישי`,
-      text: `עברו ${threshold} דקות מאז שהתחלת זמן אישי ב-DashDash.`,
+      subject: `DashDash — עברו ${threshold} של זמן אישי`,
+      text: `עברו ${threshold} מאז שהתחלת זמן אישי ב-DashDash.`,
     });
     return response.status(200).json({ sent: true });
   } catch (error) {

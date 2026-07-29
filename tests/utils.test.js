@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
   createDefaultDashboardLayout,
   isValidEmail,
+  formatAlertDuration,
+  parseAlertDuration,
   shouldSendPersonalTimeAlert,
   formatDuration,
   formatPersonalTotal,
@@ -86,16 +88,22 @@ describe('personal-time email alerts', () => {
     expect(isValidEmail('not-an-email')).toBe(false);
   });
 
-  it('sends once when the running timer reaches the selected minute threshold', () => {
+  it('parses and formats the selected alert threshold as minutes and seconds', () => {
+    expect(parseAlertDuration('01:30')).toBe(90);
+    expect(parseAlertDuration('10:75')).toBeNull();
+    expect(formatAlertDuration(90)).toBe('01:30');
+  });
+
+  it('sends once when the running timer reaches the selected time threshold', () => {
     expect(shouldSendPersonalTimeAlert({
-      elapsedMilliseconds: 10 * 60_000,
-      thresholdMinutes: 10,
+      elapsedMilliseconds: 90_000,
+      thresholdSeconds: 90,
       recipientEmail: 'user@example.com',
       alreadySent: false,
     })).toBe(true);
     expect(shouldSendPersonalTimeAlert({
-      elapsedMilliseconds: 11 * 60_000,
-      thresholdMinutes: 10,
+      elapsedMilliseconds: 91_000,
+      thresholdSeconds: 90,
       recipientEmail: 'user@example.com',
       alreadySent: true,
     })).toBe(false);

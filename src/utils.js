@@ -30,12 +30,24 @@ export function isValidEmail(value) {
   return typeof value === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
 }
 
-export function shouldSendPersonalTimeAlert({ elapsedMilliseconds, thresholdMinutes, recipientEmail, alreadySent }) {
+export function formatAlertDuration(totalSeconds) {
+  const seconds = Math.max(0, Math.floor(totalSeconds));
+  return `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
+}
+
+export function parseAlertDuration(value) {
+  const match = typeof value === 'string' && /^(\d{1,4}):([0-5]\d)$/.exec(value.trim());
+  if (!match) return null;
+  const totalSeconds = Number(match[1]) * 60 + Number(match[2]);
+  return totalSeconds > 0 && totalSeconds <= 86_400 ? totalSeconds : null;
+}
+
+export function shouldSendPersonalTimeAlert({ elapsedMilliseconds, thresholdSeconds, recipientEmail, alreadySent }) {
   return !alreadySent
     && Number.isFinite(elapsedMilliseconds)
-    && Number.isFinite(thresholdMinutes)
-    && thresholdMinutes > 0
-    && elapsedMilliseconds >= thresholdMinutes * 60_000
+    && Number.isFinite(thresholdSeconds)
+    && thresholdSeconds > 0
+    && elapsedMilliseconds >= thresholdSeconds * 1_000
     && isValidEmail(recipientEmail);
 }
 

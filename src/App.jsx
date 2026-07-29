@@ -3,7 +3,7 @@ import ReactGridLayout, { useContainerWidth } from 'react-grid-layout';
 import { verticalCompactor } from 'react-grid-layout/core';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
-import { createDefaultDashboardLayout, formatDuration, formatPersonalTotal, formatSessionDuration, keyboardTranslate, normalizeDashboardLayout, normalizeWidgetIds, removeHistoryItem, shouldSendPersonalTimeAlert, toDateKey } from './utils.js';
+import { createDefaultDashboardLayout, formatAlertDuration, formatDuration, formatPersonalTotal, formatSessionDuration, keyboardTranslate, normalizeDashboardLayout, normalizeWidgetIds, parseAlertDuration, removeHistoryItem, shouldSendPersonalTimeAlert, toDateKey } from './utils.js';
 
 const STORAGE = {
   notes: 'work-tools:notes',
@@ -133,15 +133,18 @@ export default function App() {
   const [startedAt, setStartedAt] = useState(null);
   const [now, setNow] = useState(Date.now());
   const [timeAlert, setTimeAlert] = useState(() => {
-    const saved = load(STORAGE.timeAlert, { recipientEmail: '', thresholdMinutes: 15 });
-    return { recipientEmail: saved?.recipientEmail ?? '', thresholdMinutes: Number(saved?.thresholdMinutes) || 15 };
+    const saved = load(STORAGE.timeAlert, { recipientEmail: '', thresholdSeconds: 900 });
+    const thresholdSeconds = Number(saved?.thresholdSeconds) || Number(saved?.thresholdMinutes) * 60 || 900;
+    return { recipientEmail: saved?.recipientEmail ?? '', thresholdSeconds };
   });
+  const [timeAlertInput, setTimeAlertInput] = useState(() => formatAlertDuration(timeAlert.thresholdSeconds));
   const [timeAlertStatus, setTimeAlertStatus] = useState('');
   const sentAlertSessionRef = useRef(null);
   const [translation, setTranslation] = useState('');
   const [message, setMessage] = useState('');
   const [showTranslationHistory, setShowTranslationHistory] = useState(false);
   const [showTimerHistory, setShowTimerHistory] = useState(false);
+  const [showTimeAlertSettings, setShowTimeAlertSettings] = useState(false);
   const [activeWidgetIds, setActiveWidgetIds] = useState(() => normalizeWidgetIds(load(STORAGE.widgets, null), WIDGET_IDS));
   const [showWidgetMenu, setShowWidgetMenu] = useState(false);
   const [layout, setLayout] = useState(() => normalizeDashboardLayout(load(STORAGE.layout, null), DASHBOARD_LAYOUT, activeWidgetIds));
@@ -171,7 +174,7 @@ export default function App() {
     }
     if (!shouldSendPersonalTimeAlert({
       elapsedMilliseconds: elapsed,
-      thresholdMinutes: timeAlert.thresholdMinutes,
+      thresholdSeconds: timeAlert.thresholdSeconds,
       recipientEmail: timeAlert.recipientEmail,
       alreadySent: sentAlertSessionRef.current === startedAt,
     })) return;
@@ -293,18 +296,11 @@ export default function App() {
         </div>}
       </section></div>}
 
-      {activeWidgetIds.includes('timer') && <div key="timer" className="dashboard-widget"><button className="widget-remove" onClick={() => removeWidget('timer')} aria-label="הסר כלי זמן אישי" title="הסר כלי">×</button><section className="card timer-card">
+      {activeWidgetIds.includes('timer') && <div key="timer" className="dashboard-widget"><button className="widget-remove" onClick={() => removeWidget('timer')} aria-label="הסר כלי זמן אישי" title="הסר כלי">×</button><button className="widget-settings" onClick={() => setShowTimeAlertSettings((visible) => !visible)} aria-expanded={showTimeAlertSettings} aria-controls="time-alert-popup" aria-label="הגדרות התראת מייל" title="הגדרות התראת מייל">⚙</button><section className="card timer-card">
         <div className="card-heading drag-handle"><div><p className="eyebrow">זמן אישי</p><h2>מד זמן בלחיצה</h2></div><span className={startedAt ? 'live-dot' : 'save-note'}>{startedAt ? 'פועל עכשיו' : 'מוכן'}</span></div>
         <div className="timer">{formatDuration(elapsed)}</div>
         <button className={startedAt ? 'stop-button' : 'primary-button'} onClick={toggleTimer}>{startedAt ? 'סיים זמן אישי' : 'התחל זמן אישי'}</button>
         <div className="summary"><span>סה״כ אישי היום</span><strong>{formatPersonalTotal(todaySessions)}</strong></div>
-        <div className="time-alert-settings">
-          <h3>התראת מייל</h3>
-          <label>כתובת מייל<input type="email" value={timeAlert.recipientEmail} onChange={(event) => setTimeAlert((current) => ({ ...current, recipientEmail: event.target.value }))} placeholder="you@example.com" /></label>
-          <label>שלח אחרי<input type="number" min="1" max="1440" step="1" value={timeAlert.thresholdMinutes} onChange={(event) => setTimeAlert((current) => ({ ...current, thresholdMinutes: Number(event.target.value) }))} /><span>דקות</span></label>
-          <p>ההתראה נשלחת פעם אחת בזמן שהאתר פתוח.</p>
-          {timeAlertStatus && <p className="time-alert-status" role="status">{timeAlertStatus}</p>}
-        </div>
         <button className="history-toggle" onClick={() => setShowTimerHistory((visible) => !visible)} aria-expanded={showTimerHistory}>
           <span className="sr-only">היסטוריית זמן אישי ({sessions.length})</span><span className={showTimerHistory ? 'arrow open' : 'arrow'}>⌄</span>
         </button>
@@ -317,7 +313,15 @@ export default function App() {
             </li>)}
           </ul>}
         </div>}
-      </section></div>}
+      </section>
+      {showTimeAlertSettings && <aside id="time-alert-popup" className="time-alert-popup" aria-label="הגדרות התראת מייל">
+        <div className="time-alert-popup-heading"><h3>התראת מייל</h3><button onClick={() => setShowTimeAlertSettings(false)} aria-label="סגור הגדרות התראת מייל" title="סגור">×</button></div>
+        <label>כתובת מייל<input type="email" value={timeAlert.recipientEmail} onChange={(event) => setTimeAlert((current) => ({ ...current, recipientEmail: event.target.value }))} placeholder="you@example.com" /></label>
+        <label>שלח אחרי<input className="alert-duration" type="text" inputMode="numeric" value={timeAlertInput} onChange={(event) => { const value = event.target.value; setTimeAlertInput(value); const thresholdSeconds = parseAlertDuration(value); if (thresholdSeconds !== null) setTimeAlert((current) => ({ ...current, thresholdSeconds })); }} onBlur={() => setTimeAlertInput(formatAlertDuration(timeAlert.thresholdSeconds))} aria-label="זמן להתראה בפורמט דקות ושניות" placeholder="15:00" /><span>דקות:שניות</span></label>
+        <p>ההתראה נשלחת פעם אחת בזמן שהאתר פתוח.</p>
+        {timeAlertStatus && <p className="time-alert-status" role="status">{timeAlertStatus}</p>}
+      </aside>}
+      </div>}
 
       {activeWidgetIds.filter((widgetId) => widgetId.split(':', 1)[0] === 'notes').map((widgetId) => <div key={widgetId} className="dashboard-widget"><button className="widget-remove" onClick={() => removeWidget(widgetId)} aria-label="הסר כלי דף קשקוש" title="הסר כלי">×</button><section className="card notes-card">
         <div className="card-heading drag-handle"><div><p className="eyebrow">NOTES</p><h2>דף קשקוש</h2></div><span className="save-note">נשמר אוטומטית</span></div>
