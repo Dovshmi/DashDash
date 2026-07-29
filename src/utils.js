@@ -26,6 +26,57 @@ export function formatDuration(milliseconds) {
   return `${hours}:${minutes}:${seconds}`;
 }
 
+export function createDefaultDashboardLayout(activeWidgetIds, templates) {
+  const templatesById = new Map(templates.map((item) => [item.i, item]));
+  const primaryWidgets = templates.filter((item) => activeWidgetIds.includes(item.i)).map((item) => ({ ...item }));
+  let nextY = primaryWidgets.reduce((bottom, item) => Math.max(bottom, item.y + item.h), 0);
+  const addedWidgets = activeWidgetIds
+    .filter((id) => !templatesById.has(id))
+    .map((id) => {
+      const template = templatesById.get(id.split(':', 1)[0]);
+      if (!template) return null;
+      const item = { ...template, i: id, x: 0, y: nextY };
+      nextY += item.h;
+      return item;
+    })
+    .filter(Boolean);
+  return [...primaryWidgets, ...addedWidgets];
+}
+
+export function normalizeWidgetIds(savedIds, allowedIds) {
+  if (!Array.isArray(savedIds)) return [...allowedIds];
+  const allowed = new Set(allowedIds);
+  return [...new Set(savedIds)].filter((id) => {
+    const type = typeof id === 'string' ? id.split(':', 1)[0] : '';
+    return allowed.has(type);
+  });
+}
+
+export function normalizeDashboardLayout(savedLayout, defaultLayout, activeWidgetIds = []) {
+  if (!Array.isArray(savedLayout)) return defaultLayout;
+  const validSavedItems = new Map(savedLayout
+    .filter((item) => item && typeof item.i === 'string' && ['x', 'y', 'w', 'h'].every((key) => Number.isFinite(item[key])))
+    .map((item) => [item.i, item]));
+  const defaultIds = new Set(defaultLayout.map((item) => item.i));
+  const restoredDefaults = defaultLayout.map((item) => ({ ...item, ...(validSavedItems.get(item.i) ?? {}) }));
+  const templatesByType = new Map(defaultLayout.map((item) => [item.i, item]));
+  const restoredAddedWidgets = activeWidgetIds
+    .filter((id) => !defaultIds.has(id))
+    .map((id) => {
+      const savedItem = validSavedItems.get(id);
+      const template = templatesByType.get(id.split(':', 1)[0]);
+      if (!savedItem || !template) return savedItem;
+      return {
+        ...template,
+        ...savedItem,
+        w: Math.max(savedItem.w, template.minW ?? 1),
+        h: Math.max(savedItem.h, template.minH ?? 1),
+      };
+    })
+    .filter(Boolean);
+  return [...restoredDefaults, ...restoredAddedWidgets];
+}
+
 export function removeHistoryItem(items, id) {
   return items.filter((item) => item.id !== id);
 }

@@ -1,13 +1,32 @@
 import { useEffect, useRef, useState } from 'react';
-import { formatDuration, formatPersonalTotal, formatSessionDuration, keyboardTranslate, removeHistoryItem, toDateKey } from './utils.js';
+import ReactGridLayout, { useContainerWidth } from 'react-grid-layout';
+import { verticalCompactor } from 'react-grid-layout/core';
+import 'react-grid-layout/css/styles.css';
+import 'react-resizable/css/styles.css';
+import { createDefaultDashboardLayout, formatDuration, formatPersonalTotal, formatSessionDuration, keyboardTranslate, normalizeDashboardLayout, normalizeWidgetIds, removeHistoryItem, toDateKey } from './utils.js';
 
 const STORAGE = {
   notes: 'work-tools:notes',
   sessions: 'work-tools:personal-sessions',
   translations: 'work-tools:translation-history',
   drawing: 'work-tools:drawing',
+  layout: 'work-tools:dashboard-layout-v3',
+  widgets: 'work-tools:active-widgets-v1',
 };
 const BSMART_URL = 'https://smartest/';
+const WIDGETS = [
+  { id: 'translate', name: 'Translate', description: 'תיקון שפת מקלדת' },
+  { id: 'timer', name: 'זמן אישי', description: 'מדידת זמן והיסטוריה' },
+  { id: 'notes', name: 'דף קשקוש', description: 'פתקים מהירים', repeatable: true },
+  { id: 'drawing', name: 'כתיבה וציור', description: 'לוח ציור', repeatable: true },
+];
+const WIDGET_IDS = WIDGETS.map((widget) => widget.id);
+const DASHBOARD_LAYOUT = [
+  { i: 'timer', x: 0, y: 0, w: 6, h: 11, minW: 3, minH: 7 },
+  { i: 'translate', x: 6, y: 0, w: 6, h: 11, minW: 3, minH: 7 },
+  { i: 'notes', x: 0, y: 11, w: 6, h: 14, minW: 4, minH: 6 },
+  { i: 'drawing', x: 6, y: 11, w: 6, h: 14, minW: 5, minH: 10 },
+];
 
 function load(key, fallback) {
   try {
@@ -26,9 +45,10 @@ function formatDate(iso) {
   return new Intl.DateTimeFormat('he-IL', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(iso));
 }
 
-function DrawingBoard() {
+function DrawingBoard({ widgetId }) {
   const canvasRef = useRef(null);
   const drawingRef = useRef(false);
+  const drawingStorageKey = widgetId === 'drawing' ? STORAGE.drawing : `${STORAGE.drawing}:${widgetId}`;
   const [color, setColor] = useState('#1e293b');
   const [size, setSize] = useState(4);
 
@@ -37,13 +57,13 @@ function DrawingBoard() {
     const context = canvas.getContext('2d');
     context.fillStyle = '#ffffff';
     context.fillRect(0, 0, canvas.width, canvas.height);
-    const saved = localStorage.getItem(STORAGE.drawing);
+    const saved = localStorage.getItem(drawingStorageKey);
     if (saved) {
       const image = new Image();
       image.onload = () => context.drawImage(image, 0, 0, canvas.width, canvas.height);
       image.src = saved;
     }
-  }, []);
+  }, [drawingStorageKey]);
 
   function point(event) {
     const rect = canvasRef.current.getBoundingClientRect();
@@ -78,7 +98,7 @@ function DrawingBoard() {
   function stop() {
     if (!drawingRef.current) return;
     drawingRef.current = false;
-    localStorage.setItem(STORAGE.drawing, canvasRef.current.toDataURL('image/png'));
+    localStorage.setItem(drawingStorageKey, canvasRef.current.toDataURL('image/png'));
   }
 
   function clear() {
@@ -87,11 +107,11 @@ function DrawingBoard() {
     const context = canvas.getContext('2d');
     context.fillStyle = '#ffffff';
     context.fillRect(0, 0, canvas.width, canvas.height);
-    localStorage.removeItem(STORAGE.drawing);
+    localStorage.removeItem(drawingStorageKey);
   }
 
   return <section className="card drawing-card">
-    <div className="card-heading"><div><p className="eyebrow">קשקוש</p><h2>כתיבה וציור</h2></div><span className="save-note">נשמר בדפדפן</span></div>
+    <div className="card-heading drag-handle"><div><p className="eyebrow">קשקוש</p><h2>כתיבה וציור</h2></div><span className="save-note">נשמר בדפדפן</span></div>
     <div className="drawing-tools">
       <label>צבע <input aria-label="צבע העט" type="color" value={color} onChange={(e) => setColor(e.target.value)} /></label>
       <label>עובי <input aria-label="עובי העט" type="range" min="1" max="22" value={size} onChange={(e) => setSize(Number(e.target.value))} /></label>
@@ -103,7 +123,10 @@ function DrawingBoard() {
 }
 
 export default function App() {
-  const [notes, setNotes] = useState(() => load(STORAGE.notes, ''));
+  const [notesById, setNotesById] = useState(() => {
+    const savedNotes = load(STORAGE.notes, '');
+    return typeof savedNotes === 'string' ? { notes: savedNotes } : savedNotes && typeof savedNotes === 'object' ? savedNotes : {};
+  });
   const [sessions, setSessions] = useState(() => load(STORAGE.sessions, []));
   const [translations, setTranslations] = useState(() => load(STORAGE.translations, []));
   const [startedAt, setStartedAt] = useState(null);
@@ -112,10 +135,16 @@ export default function App() {
   const [message, setMessage] = useState('');
   const [showTranslationHistory, setShowTranslationHistory] = useState(false);
   const [showTimerHistory, setShowTimerHistory] = useState(false);
+  const [activeWidgetIds, setActiveWidgetIds] = useState(() => normalizeWidgetIds(load(STORAGE.widgets, null), WIDGET_IDS));
+  const [showWidgetMenu, setShowWidgetMenu] = useState(false);
+  const [layout, setLayout] = useState(() => normalizeDashboardLayout(load(STORAGE.layout, null), DASHBOARD_LAYOUT, activeWidgetIds));
+  const { width, containerRef, mounted } = useContainerWidth({ initialWidth: 1180 });
 
-  useEffect(() => { localStorage.setItem(STORAGE.notes, JSON.stringify(notes)); }, [notes]);
+  useEffect(() => { localStorage.setItem(STORAGE.notes, JSON.stringify(notesById)); }, [notesById]);
   useEffect(() => { localStorage.setItem(STORAGE.sessions, JSON.stringify(sessions)); }, [sessions]);
   useEffect(() => { localStorage.setItem(STORAGE.translations, JSON.stringify(translations)); }, [translations]);
+  useEffect(() => { localStorage.setItem(STORAGE.layout, JSON.stringify(layout)); }, [layout]);
+  useEffect(() => { localStorage.setItem(STORAGE.widgets, JSON.stringify(activeWidgetIds)); }, [activeWidgetIds]);
   useEffect(() => {
     if (!startedAt) return undefined;
     const timer = window.setInterval(() => setNow(Date.now()), 1000);
@@ -125,6 +154,26 @@ export default function App() {
   const today = toDateKey(new Date());
   const todaySessions = sessions.filter((session) => toDateKey(new Date(session.startedAt)) === today);
   const elapsed = startedAt ? now - new Date(startedAt).getTime() : 0;
+  const availableWidgets = WIDGETS.filter((widget) => widget.repeatable || !activeWidgetIds.includes(widget.id));
+
+  function addWidget(type) {
+    const definition = WIDGETS.find((widget) => widget.id === type);
+    if (!definition) return;
+    const widgetId = definition.repeatable ? `${type}:${crypto.randomUUID()}` : type;
+    setActiveWidgetIds((current) => current.includes(widgetId) ? current : [...current, widgetId]);
+    setLayout((current) => {
+      if (current.some((item) => item.i === widgetId)) return current;
+      const template = DASHBOARD_LAYOUT.find((item) => item.i === type);
+      const nextY = Math.max(0, ...current.map((item) => item.y + item.h));
+      return [...current, { ...template, i: widgetId, x: 0, y: nextY }];
+    });
+    setShowWidgetMenu(false);
+  }
+
+  function removeWidget(id) {
+    setActiveWidgetIds((current) => current.filter((widgetId) => widgetId !== id));
+    setLayout((current) => current.filter((item) => item.i !== id));
+  }
 
   async function translateClipboard() {
     try {
@@ -163,13 +212,33 @@ export default function App() {
 
   return <main className="app-shell">
     <header className="topbar">
-      <div><p className="eyebrow">WORKSPACE</p><h1>כלי עבודה</h1></div>
-      <button className="bsmart" onClick={() => window.open(BSMART_URL, '_blank', 'noopener,noreferrer')}>BSMART ↗</button>
+      <div><h1>דאש דאש</h1></div>
+      <div className="topbar-actions">
+        <span className="layout-hint">גרור כותרת · החלונות יסתדרו בלי חפיפה</span>
+        <button className="layout-reset" onClick={() => setLayout(createDefaultDashboardLayout(activeWidgetIds, DASHBOARD_LAYOUT))}>איפוס חלונות</button>
+        <div className="widget-add-control">
+          <button className="widget-add" onClick={() => setShowWidgetMenu((visible) => !visible)} aria-expanded={showWidgetMenu}>＋ הוספה</button>
+          {showWidgetMenu && <div className="widget-menu">
+            {availableWidgets.length === 0 ? <p>כל הכלים כבר מוצגים.</p> : availableWidgets.map((widget) => <button key={widget.id} onClick={() => addWidget(widget.id)}><strong>{widget.name}</strong><small>{widget.description}</small></button>)}
+          </div>}
+        </div>
+        <button className="bsmart" onClick={() => window.open(BSMART_URL, '_blank', 'noopener,noreferrer')}>BSMART ↗</button>
+      </div>
     </header>
 
-    <div className="grid">
-      <section className="card translate-card">
-        <div className="card-heading"><div><p className="eyebrow">TRANSLATE</p><h2>תיקון שפת מקלדת</h2></div></div>
+    <div ref={containerRef} className="dashboard-shell">
+      {mounted && <ReactGridLayout
+        layout={layout}
+        width={width}
+        gridConfig={{ cols: 12, rowHeight: 32, margin: [14, 14], containerPadding: [0, 0] }}
+        dragConfig={{ enabled: true, bounded: true, handle: '.drag-handle' }}
+        resizeConfig={{ enabled: true, handles: ['se'] }}
+        compactor={verticalCompactor}
+        onLayoutChange={setLayout}
+        className="dashboard-grid"
+      >
+      {activeWidgetIds.includes('translate') && <div key="translate" className="dashboard-widget"><button className="widget-remove" onClick={() => removeWidget('translate')} aria-label="הסר כלי תיקון שפת מקלדת" title="הסר כלי">×</button><section className="card translate-card">
+        <div className="card-heading drag-handle"><div><p className="eyebrow">TRANSLATE</p><h2>תיקון שפת מקלדת</h2></div></div>
         <p>לוחצים על הכפתור: הטקסט שב־Clipboard מומר בין עברית לאנגלית ומועתק חזרה.</p>
         <button className="primary-button" onClick={translateClipboard}>TRANSLATE מה־Clipboard</button>
         {message && <p className="status" role="status">{message}</p>}
@@ -185,10 +254,10 @@ export default function App() {
             </li>)}
           </ul>}
         </div>}
-      </section>
+      </section></div>}
 
-      <section className="card timer-card">
-        <div className="card-heading"><div><p className="eyebrow">זמן אישי</p><h2>מד זמן בלחיצה</h2></div><span className={startedAt ? 'live-dot' : 'save-note'}>{startedAt ? 'פועל עכשיו' : 'מוכן'}</span></div>
+      {activeWidgetIds.includes('timer') && <div key="timer" className="dashboard-widget"><button className="widget-remove" onClick={() => removeWidget('timer')} aria-label="הסר כלי זמן אישי" title="הסר כלי">×</button><section className="card timer-card">
+        <div className="card-heading drag-handle"><div><p className="eyebrow">זמן אישי</p><h2>מד זמן בלחיצה</h2></div><span className={startedAt ? 'live-dot' : 'save-note'}>{startedAt ? 'פועל עכשיו' : 'מוכן'}</span></div>
         <div className="timer">{formatDuration(elapsed)}</div>
         <button className={startedAt ? 'stop-button' : 'primary-button'} onClick={toggleTimer}>{startedAt ? 'סיים זמן אישי' : 'התחל זמן אישי'}</button>
         <div className="summary"><span>סה״כ אישי היום</span><strong>{formatPersonalTotal(todaySessions)}</strong></div>
@@ -204,14 +273,15 @@ export default function App() {
             </li>)}
           </ul>}
         </div>}
-      </section>
+      </section></div>}
 
-      <section className="card notes-card">
-        <div className="card-heading"><div><p className="eyebrow">NOTES</p><h2>דף קשקוש</h2></div><span className="save-note">נשמר אוטומטית</span></div>
-        <textarea aria-label="דף קשקוש לכתיבה" value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="כתוב כאן כל מה שצריך..." />
-      </section>
+      {activeWidgetIds.filter((widgetId) => widgetId.split(':', 1)[0] === 'notes').map((widgetId) => <div key={widgetId} className="dashboard-widget"><button className="widget-remove" onClick={() => removeWidget(widgetId)} aria-label="הסר כלי דף קשקוש" title="הסר כלי">×</button><section className="card notes-card">
+        <div className="card-heading drag-handle"><div><p className="eyebrow">NOTES</p><h2>דף קשקוש</h2></div><span className="save-note">נשמר אוטומטית</span></div>
+        <textarea aria-label="דף קשקוש לכתיבה" value={notesById[widgetId] ?? ''} onChange={(event) => setNotesById((current) => ({ ...current, [widgetId]: event.target.value }))} placeholder="כתוב כאן כל מה שצריך..." />
+      </section></div>)}
+      {activeWidgetIds.filter((widgetId) => widgetId.split(':', 1)[0] === 'drawing').map((widgetId) => <div key={widgetId} className="dashboard-widget"><button className="widget-remove" onClick={() => removeWidget(widgetId)} aria-label="הסר כלי כתיבה וציור" title="הסר כלי">×</button><DrawingBoard widgetId={widgetId} /></div>)}
+      </ReactGridLayout>}
     </div>
-    <DrawingBoard />
     <footer>המידע נשמר מקומית בדפדפן הזה בלבד.</footer>
   </main>;
 }

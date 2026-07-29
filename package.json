@@ -12,7 +12,8 @@
   "dependencies": {
     "@vitejs/plugin-react": "latest",
     "react": "latest",
-    "react-dom": "latest"
+    "react-dom": "latest",
+    "react-grid-layout": "^2.2.4"
   },
   "devDependencies": {
     "jsdom": "latest",
