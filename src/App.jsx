@@ -12,6 +12,8 @@ const STORAGE = {
   drawing: 'work-tools:drawing',
   layout: 'work-tools:dashboard-layout-v3',
   widgets: 'work-tools:active-widgets-v1',
+  mobileLayout: 'work-tools:mobile-dashboard-layout-v1',
+  mobileWidgets: 'work-tools:mobile-active-widgets-v1',
   timeAlert: 'work-tools:time-alert-settings-v1',
 };
 const BSMART_URL = 'https://smartest/';
@@ -27,6 +29,14 @@ const DASHBOARD_LAYOUT = [
   { i: 'translate', x: 6, y: 0, w: 6, h: 11, minW: 3, minH: 7 },
   { i: 'notes', x: 0, y: 11, w: 6, h: 14, minW: 4, minH: 6 },
   { i: 'drawing', x: 6, y: 11, w: 6, h: 14, minW: 5, minH: 10 },
+];
+
+const MOBILE_WIDGET_IDS = ['timer', 'notes', 'drawing'];
+const MOBILE_DASHBOARD_LAYOUT = [
+  { i: 'timer', x: 0, y: 0, w: 1, h: 11, minW: 1, minH: 7 },
+  { i: 'notes', x: 0, y: 11, w: 1, h: 14, minW: 1, minH: 6 },
+  { i: 'drawing', x: 0, y: 25, w: 1, h: 14, minW: 1, minH: 10 },
+  { i: 'translate', x: 0, y: 39, w: 1, h: 11, minW: 1, minH: 7 },
 ];
 
 function load(key, fallback) {
@@ -146,15 +156,23 @@ export default function App() {
   const [showTimerHistory, setShowTimerHistory] = useState(false);
   const [showTimeAlertSettings, setShowTimeAlertSettings] = useState(false);
   const [activeWidgetIds, setActiveWidgetIds] = useState(() => normalizeWidgetIds(load(STORAGE.widgets, null), WIDGET_IDS));
+  const [mobileWidgetIds, setMobileWidgetIds] = useState(() => normalizeWidgetIds(load(STORAGE.mobileWidgets, MOBILE_WIDGET_IDS), WIDGET_IDS));
   const [showWidgetMenu, setShowWidgetMenu] = useState(false);
   const [layout, setLayout] = useState(() => normalizeDashboardLayout(load(STORAGE.layout, null), DASHBOARD_LAYOUT, activeWidgetIds));
+  const [mobileLayout, setMobileLayout] = useState(() => normalizeDashboardLayout(load(STORAGE.mobileLayout, null), MOBILE_DASHBOARD_LAYOUT, mobileWidgetIds));
   const { width, containerRef, mounted } = useContainerWidth({ initialWidth: 1180 });
+  const isMobile = width <= 700;
+  const currentWidgetIds = isMobile ? mobileWidgetIds : activeWidgetIds;
+  const currentLayout = isMobile ? mobileLayout : layout;
+  const currentTemplates = isMobile ? MOBILE_DASHBOARD_LAYOUT : DASHBOARD_LAYOUT;
 
   useEffect(() => { localStorage.setItem(STORAGE.notes, JSON.stringify(notesById)); }, [notesById]);
   useEffect(() => { localStorage.setItem(STORAGE.sessions, JSON.stringify(sessions)); }, [sessions]);
   useEffect(() => { localStorage.setItem(STORAGE.translations, JSON.stringify(translations)); }, [translations]);
   useEffect(() => { localStorage.setItem(STORAGE.layout, JSON.stringify(layout)); }, [layout]);
+  useEffect(() => { localStorage.setItem(STORAGE.mobileLayout, JSON.stringify(mobileLayout)); }, [mobileLayout]);
   useEffect(() => { localStorage.setItem(STORAGE.widgets, JSON.stringify(activeWidgetIds)); }, [activeWidgetIds]);
+  useEffect(() => { localStorage.setItem(STORAGE.mobileWidgets, JSON.stringify(mobileWidgetIds)); }, [mobileWidgetIds]);
   useEffect(() => { localStorage.setItem(STORAGE.timeAlert, JSON.stringify(timeAlert)); }, [timeAlert]);
   useEffect(() => {
     if (!startedAt) return undefined;
@@ -192,16 +210,18 @@ export default function App() {
       })
       .catch(() => setTimeAlertStatus('לא הצלחנו לשלוח התראה. בדוק את הגדרת שירות המייל.'));
   }, [elapsed, startedAt, timeAlert]);
-  const availableWidgets = WIDGETS.filter((widget) => widget.repeatable || !activeWidgetIds.includes(widget.id));
+  const availableWidgets = WIDGETS.filter((widget) => widget.repeatable || !currentWidgetIds.includes(widget.id));
 
   function addWidget(type) {
     const definition = WIDGETS.find((widget) => widget.id === type);
     if (!definition) return;
     const widgetId = definition.repeatable ? `${type}:${crypto.randomUUID()}` : type;
-    setActiveWidgetIds((current) => current.includes(widgetId) ? current : [...current, widgetId]);
-    setLayout((current) => {
+    const setWidgetIds = isMobile ? setMobileWidgetIds : setActiveWidgetIds;
+    const setCurrentLayout = isMobile ? setMobileLayout : setLayout;
+    setWidgetIds((current) => current.includes(widgetId) ? current : [...current, widgetId]);
+    setCurrentLayout((current) => {
       if (current.some((item) => item.i === widgetId)) return current;
-      const template = DASHBOARD_LAYOUT.find((item) => item.i === type);
+      const template = currentTemplates.find((item) => item.i === type);
       const nextY = Math.max(0, ...current.map((item) => item.y + item.h));
       return [...current, { ...template, i: widgetId, x: 0, y: nextY }];
     });
@@ -209,8 +229,19 @@ export default function App() {
   }
 
   function removeWidget(id) {
-    setActiveWidgetIds((current) => current.filter((widgetId) => widgetId !== id));
-    setLayout((current) => current.filter((item) => item.i !== id));
+    const setWidgetIds = isMobile ? setMobileWidgetIds : setActiveWidgetIds;
+    const setCurrentLayout = isMobile ? setMobileLayout : setLayout;
+    setWidgetIds((current) => current.filter((widgetId) => widgetId !== id));
+    setCurrentLayout((current) => current.filter((item) => item.i !== id));
+  }
+
+  function resetDashboard() {
+    if (isMobile) {
+      setMobileWidgetIds(MOBILE_WIDGET_IDS);
+      setMobileLayout(createDefaultDashboardLayout(MOBILE_WIDGET_IDS, MOBILE_DASHBOARD_LAYOUT));
+      return;
+    }
+    setLayout(createDefaultDashboardLayout(activeWidgetIds, DASHBOARD_LAYOUT));
   }
 
   async function translateClipboard() {
@@ -255,7 +286,7 @@ export default function App() {
       <div><h1>דאש דאש</h1></div>
       <div className="topbar-actions">
         <span className="layout-hint">גרור כותרת · החלונות יסתדרו בלי חפיפה</span>
-        <button className="layout-reset" onClick={() => setLayout(createDefaultDashboardLayout(activeWidgetIds, DASHBOARD_LAYOUT))}>איפוס חלונות</button>
+        <button className="layout-reset" onClick={resetDashboard}>איפוס חלונות</button>
         <div className="widget-add-control">
           <button className="widget-add" onClick={() => setShowWidgetMenu((visible) => !visible)} aria-expanded={showWidgetMenu}>＋ הוספה</button>
           {showWidgetMenu && <div className="widget-menu">
@@ -268,16 +299,16 @@ export default function App() {
 
     <div ref={containerRef} className="dashboard-shell">
       {mounted && <ReactGridLayout
-        layout={layout}
+        layout={currentLayout}
         width={width}
-        gridConfig={{ cols: 12, rowHeight: 32, margin: [14, 14], containerPadding: [0, 0] }}
+        gridConfig={isMobile ? { cols: 1, rowHeight: 28, margin: [12, 12], containerPadding: [0, 0] } : { cols: 12, rowHeight: 32, margin: [14, 14], containerPadding: [0, 0] }}
         dragConfig={{ enabled: true, bounded: true, handle: '.drag-handle' }}
-        resizeConfig={{ enabled: true, handles: ['se'] }}
+        resizeConfig={{ enabled: !isMobile, handles: ['se'] }}
         compactor={verticalCompactor}
-        onLayoutChange={setLayout}
+        onLayoutChange={isMobile ? setMobileLayout : setLayout}
         className="dashboard-grid"
       >
-      {activeWidgetIds.includes('translate') && <div key="translate" className="dashboard-widget"><button className="widget-remove" onClick={() => removeWidget('translate')} aria-label="הסר כלי תיקון שפת מקלדת" title="הסר כלי">×</button><section className="card translate-card">
+      {currentWidgetIds.includes('translate') && <div key="translate" className="dashboard-widget"><button className="widget-remove" onClick={() => removeWidget('translate')} aria-label="הסר כלי תיקון שפת מקלדת" title="הסר כלי">×</button><section className="card translate-card">
         <div className="card-heading drag-handle"><div><p className="eyebrow">TRANSLATE</p><h2>תיקון שפת מקלדת</h2></div></div>
         <p>לוחצים על הכפתור: הטקסט שב־Clipboard מומר בין עברית לאנגלית ומועתק חזרה.</p>
         <button className="primary-button" onClick={translateClipboard}>TRANSLATE מה־Clipboard</button>
@@ -296,7 +327,7 @@ export default function App() {
         </div>}
       </section></div>}
 
-      {activeWidgetIds.includes('timer') && <div key="timer" className="dashboard-widget"><button className="widget-remove" onClick={() => removeWidget('timer')} aria-label="הסר כלי זמן אישי" title="הסר כלי">×</button><button className="widget-settings" onClick={() => setShowTimeAlertSettings((visible) => !visible)} aria-expanded={showTimeAlertSettings} aria-controls="time-alert-popup" aria-label="הגדרות התראת מייל" title="הגדרות התראת מייל">⚙</button><section className="card timer-card">
+      {currentWidgetIds.includes('timer') && <div key="timer" className="dashboard-widget"><button className="widget-remove" onClick={() => removeWidget('timer')} aria-label="הסר כלי זמן אישי" title="הסר כלי">×</button><button className="widget-settings" onClick={() => setShowTimeAlertSettings((visible) => !visible)} aria-expanded={showTimeAlertSettings} aria-controls="time-alert-popup" aria-label="הגדרות התראת מייל" title="הגדרות התראת מייל">⚙</button><section className="card timer-card">
         <div className="card-heading drag-handle"><div><p className="eyebrow">זמן אישי</p><h2>מד זמן בלחיצה</h2></div><span className={startedAt ? 'live-dot' : 'save-note'}>{startedAt ? 'פועל עכשיו' : 'מוכן'}</span></div>
         <div className="timer">{formatDuration(elapsed)}</div>
         <button className={startedAt ? 'stop-button' : 'primary-button'} onClick={toggleTimer}>{startedAt ? 'סיים זמן אישי' : 'התחל זמן אישי'}</button>
@@ -323,11 +354,11 @@ export default function App() {
       </aside>}
       </div>}
 
-      {activeWidgetIds.filter((widgetId) => widgetId.split(':', 1)[0] === 'notes').map((widgetId) => <div key={widgetId} className="dashboard-widget"><button className="widget-remove" onClick={() => removeWidget(widgetId)} aria-label="הסר כלי דף קשקוש" title="הסר כלי">×</button><section className="card notes-card">
+      {currentWidgetIds.filter((widgetId) => widgetId.split(':', 1)[0] === 'notes').map((widgetId) => <div key={widgetId} className="dashboard-widget"><button className="widget-remove" onClick={() => removeWidget(widgetId)} aria-label="הסר כלי דף קשקוש" title="הסר כלי">×</button><section className="card notes-card">
         <div className="card-heading drag-handle"><div><p className="eyebrow">NOTES</p><h2>דף קשקוש</h2></div><span className="save-note">נשמר אוטומטית</span></div>
         <textarea aria-label="דף קשקוש לכתיבה" value={notesById[widgetId] ?? ''} onChange={(event) => setNotesById((current) => ({ ...current, [widgetId]: event.target.value }))} placeholder="כתוב כאן כל מה שצריך..." />
       </section></div>)}
-      {activeWidgetIds.filter((widgetId) => widgetId.split(':', 1)[0] === 'drawing').map((widgetId) => <div key={widgetId} className="dashboard-widget"><button className="widget-remove" onClick={() => removeWidget(widgetId)} aria-label="הסר כלי כתיבה וציור" title="הסר כלי">×</button><DrawingBoard widgetId={widgetId} /></div>)}
+      {currentWidgetIds.filter((widgetId) => widgetId.split(':', 1)[0] === 'drawing').map((widgetId) => <div key={widgetId} className="dashboard-widget"><button className="widget-remove" onClick={() => removeWidget(widgetId)} aria-label="הסר כלי כתיבה וציור" title="הסר כלי">×</button><DrawingBoard widgetId={widgetId} /></div>)}
       </ReactGridLayout>}
     </div>
     <footer>המידע נשמר מקומית בדפדפן הזה בלבד.</footer>

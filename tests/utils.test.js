@@ -69,6 +69,16 @@ describe('dashboard layout helpers', () => {
     ]);
   });
 
+  it('builds a one-column mobile reset with only the requested tools in order', () => {
+    const templates = [
+      { i: 'timer', x: 0, y: 0, w: 1, h: 11 },
+      { i: 'notes', x: 0, y: 11, w: 1, h: 14 },
+      { i: 'drawing', x: 0, y: 25, w: 1, h: 14 },
+      { i: 'translate', x: 0, y: 39, w: 1, h: 11 },
+    ];
+    expect(createDefaultDashboardLayout(['timer', 'notes', 'drawing'], templates)).toEqual(templates.slice(0, 3));
+  });
+
   it('keeps only known widget ids and allows unique instances of repeatable tools', () => {
     expect(normalizeWidgetIds(['timer', 'notes:one', 'unknown', 'notes:one', 'drawing:two'], ['translate', 'timer', 'notes', 'drawing']))
       .toEqual(['timer', 'notes:one', 'drawing:two']);
