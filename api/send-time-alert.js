@@ -1,15 +1,7 @@
 import nodemailer from 'nodemailer';
+import { isAllowedRequestOrigin } from './request-origin.js';
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-function isAllowedOrigin(request) {
-  const origin = request.headers.origin;
-  const allowedOrigins = [
-    process.env.APP_ORIGIN,
-    process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null,
-  ].filter(Boolean);
-  return Boolean(origin) && allowedOrigins.includes(origin);
-}
 
 export default async function handler(request, response) {
   if (request.method !== 'POST') {
@@ -17,7 +9,7 @@ export default async function handler(request, response) {
     return response.status(405).json({ error: 'Method not allowed' });
   }
 
-  if (!isAllowedOrigin(request)) {
+  if (!isAllowedRequestOrigin(request.headers, process.env)) {
     return response.status(403).json({ error: 'Origin not allowed' });
   }
 
