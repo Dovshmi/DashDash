@@ -1,0 +1,8 @@
+/* Keep the timer settings popup above every grid item and widget control. */
+.dashboard-widget:has(> .time-alert-popup) {
+  z-index: 1000 !important;
+}
+
+.dashboard-widget:has(> .time-alert-popup) > .time-alert-popup {
+  z-index: 1001 !important;
+}
