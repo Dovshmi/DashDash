@@ -7,30 +7,42 @@
   z-index: 1001 !important;
 }
 
-/* Make the lock control visually lighter without changing its function. */
-.widget-lock {
-  width: 18px;
-  height: 18px;
-  border-radius: 5px;
+/* Keep the time-choice control compact while preserving the same position. */
+.timer-preset-control {
+  width: 108px;
+  min-width: 108px;
+  max-width: 108px;
 }
 
-.widget-lock svg {
-  width: 10px;
-  height: 10px;
+.timer-preset-trigger {
+  min-height: 30px;
+  padding: 5px 8px;
+  border-radius: 8px;
+  font-size: .75rem;
+}
+
+.timer-preset-option {
+  min-height: 34px;
+  padding: 7px 8px;
+  font-size: .76rem;
 }
 
 @media (max-width: 700px) {
-  .widget-lock,
-  .timer-widget > .widget-lock {
-    top: 14px;
-    left: 42px;
-    width: 16px;
-    height: 16px;
-    border-radius: 4px;
+  .timer-preset-control {
+    width: 96px;
+    min-width: 96px;
+    max-width: 96px;
   }
 
-  .widget-lock svg {
-    width: 9px;
-    height: 9px;
+  .timer-preset-trigger {
+    min-height: 28px;
+    padding: 4px 7px;
+    font-size: .7rem;
+  }
+
+  .timer-preset-option {
+    min-height: 34px;
+    padding: 7px 6px;
+    font-size: .72rem;
   }
 }
