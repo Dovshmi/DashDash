@@ -18,15 +18,6 @@ function closeAllPresetMenus(except = null) {
   });
 }
 
-function placeControlOutsideDragHandle(select, control) {
-  const heading = select.closest('.card-heading');
-  if (heading) {
-    heading.insertAdjacentElement('afterend', control);
-    return;
-  }
-  select.insertAdjacentElement('afterend', control);
-}
-
 function enhancePresetSelect(select) {
   select.querySelectorAll('option').forEach((option) => {
     const label = optionLabel(option);
@@ -50,12 +41,11 @@ function enhancePresetSelect(select) {
     menu.setAttribute('role', 'listbox');
     menu.hidden = true;
 
-    [control, trigger, menu].forEach((element) => {
-      element.addEventListener('pointerdown', blockDashboardDrag, true);
-      element.addEventListener('mousedown', blockDashboardDrag, true);
-      element.addEventListener('touchstart', blockDashboardDrag, { capture: true, passive: true });
-      element.addEventListener('click', blockDashboardDrag, true);
-    });
+    // Stop pointer gestures only after they reach the control, so the
+    // dashboard does not start dragging but the button still receives taps.
+    control.addEventListener('pointerdown', blockDashboardDrag);
+    control.addEventListener('mousedown', blockDashboardDrag);
+    control.addEventListener('touchstart', blockDashboardDrag, { passive: true });
 
     trigger.addEventListener('click', (event) => {
       event.stopPropagation();
@@ -67,7 +57,8 @@ function enhancePresetSelect(select) {
     });
 
     control.append(trigger, menu);
-    placeControlOutsideDragHandle(select, control);
+    // Keep the replacement exactly where the original select was located.
+    select.insertAdjacentElement('afterend', control);
     select.addEventListener('change', () => scheduleEnhancement());
     elements = { control, trigger, menu, signature: '' };
     enhancedSelects.set(select, elements);
@@ -95,9 +86,6 @@ function enhancePresetSelect(select) {
     item.setAttribute('role', 'option');
     item.setAttribute('aria-selected', String(option.value === select.value));
 
-    item.addEventListener('pointerdown', blockDashboardDrag, true);
-    item.addEventListener('mousedown', blockDashboardDrag, true);
-    item.addEventListener('touchstart', blockDashboardDrag, { capture: true, passive: true });
     item.addEventListener('click', (event) => {
       event.stopPropagation();
       if (select.disabled) return;
