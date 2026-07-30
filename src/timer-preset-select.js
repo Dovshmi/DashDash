@@ -1,6 +1,11 @@
 const selector = '.timer-preset-select';
+const PELE_URL = 'https://b-pele.bezeq.com/local/dashboardplus/view.php';
 const enhancedSelects = new WeakMap();
 let enhancementScheduled = false;
+
+function isMobileView() {
+  return window.matchMedia('(max-width: 700px)').matches;
+}
 
 function optionLabel(option) {
   return (option.textContent ?? '').split('·', 1)[0].trim();
@@ -16,6 +21,29 @@ function closeAllPresetMenus(except = null) {
     menu.hidden = true;
     menu.previousElementSibling?.setAttribute('aria-expanded', 'false');
   });
+}
+
+function placePresetControl(select, control) {
+  const heading = select.closest('.card-heading');
+  if (!heading) return;
+
+  const mobile = isMobileView();
+  heading.classList.toggle('timer-mobile-preset-title', mobile);
+
+  if (mobile) {
+    const titleSlot = heading.querySelector(':scope > div:first-child');
+    if (titleSlot && control.parentElement !== titleSlot) titleSlot.append(control);
+    return;
+  }
+
+  if (select.nextElementSibling !== control) select.insertAdjacentElement('afterend', control);
+}
+
+function updateTopActionButton() {
+  const button = document.querySelector('.bsmart');
+  if (!button) return;
+  button.textContent = isMobileView() ? 'הפלא ↗' : 'BSMART ↗';
+  button.setAttribute('aria-label', isMobileView() ? 'פתח את הפלא' : 'פתח את BSMART');
 }
 
 function enhancePresetSelect(select) {
@@ -41,8 +69,6 @@ function enhancePresetSelect(select) {
     menu.setAttribute('role', 'listbox');
     menu.hidden = true;
 
-    // Stop pointer gestures only after they reach the control, so the
-    // dashboard does not start dragging but the button still receives taps.
     control.addEventListener('pointerdown', blockDashboardDrag);
     control.addEventListener('mousedown', blockDashboardDrag);
     control.addEventListener('touchstart', blockDashboardDrag, { passive: true });
@@ -57,7 +83,6 @@ function enhancePresetSelect(select) {
     });
 
     control.append(trigger, menu);
-    // Keep the replacement exactly where the original select was located.
     select.insertAdjacentElement('afterend', control);
     select.addEventListener('change', () => scheduleEnhancement());
     elements = { control, trigger, menu, signature: '' };
@@ -65,6 +90,8 @@ function enhancePresetSelect(select) {
   }
 
   const { control, trigger, menu } = elements;
+  placePresetControl(select, control);
+
   const selectedOption = select.options[select.selectedIndex] ?? select.options[0];
   trigger.textContent = selectedOption ? optionLabel(selectedOption) : 'בחר זמן';
   trigger.disabled = select.disabled;
@@ -104,6 +131,7 @@ function enhancePresetSelect(select) {
 function enhanceAllPresetSelects() {
   enhancementScheduled = false;
   document.querySelectorAll(selector).forEach(enhancePresetSelect);
+  updateTopActionButton();
 }
 
 function scheduleEnhancement() {
@@ -123,10 +151,23 @@ function startPresetSelectEnhancement() {
     attributeFilter: ['class', 'disabled', 'value'],
   });
 
-  document.addEventListener('click', () => closeAllPresetMenus());
+  document.addEventListener('click', (event) => {
+    const topAction = event.target.closest?.('.bsmart');
+    if (topAction && isMobileView()) {
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+      window.open(PELE_URL, '_blank', 'noopener,noreferrer');
+      return;
+    }
+    closeAllPresetMenus();
+  }, true);
+
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') closeAllPresetMenus();
   });
+
+  window.addEventListener('resize', scheduleEnhancement);
 }
 
 if (document.readyState === 'loading') {
