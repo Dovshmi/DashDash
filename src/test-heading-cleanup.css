@@ -36,14 +36,28 @@
   max-width: 58%;
   min-width: 150px;
   border: 1px solid #31455f;
-  border-radius: 9px;
-  padding: 7px 10px;
-  background: #101c30;
-  color: #dbeafe;
+  border-radius: 10px;
+  padding: 9px 14px;
+  background: #203149;
+  color: #e2e8f0;
   font: inherit;
-  font-size: .82rem;
-  font-weight: 600;
+  font-size: .84rem;
+  font-weight: 700;
+  text-align: center;
+  text-align-last: center;
   outline: none;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: none;
+  transition: background .16s, border-color .16s, transform .16s;
+}
+
+.timer-preset-select:hover:not(:disabled) {
+  background: #2a405f;
+  border-color: #46617f;
+  transform: translateY(-1px);
 }
 
 .timer-preset-select:focus {
@@ -53,10 +67,11 @@
 
 .timer-preset-select.running,
 .timer-preset-select:disabled {
-  border-color: rgba(74, 222, 128, .55);
-  background: rgba(22, 101, 52, .35);
+  border-color: rgba(74, 222, 128, .6);
+  background: rgba(22, 101, 52, .48);
   color: #86efac;
   opacity: 1;
+  cursor: default;
 }
 
 .timer-settings-popup {
@@ -157,10 +172,10 @@
   }
 
   .timer-preset-select {
-    max-width: 62%;
-    min-width: 135px;
-    padding: 6px 8px;
-    font-size: .76rem;
+    max-width: 64%;
+    min-width: 138px;
+    padding: 8px 10px;
+    font-size: .78rem;
   }
 
   .timer-settings-popup {
