@@ -6,3 +6,31 @@
 .dashboard-widget:has(> .time-alert-popup) > .time-alert-popup {
   z-index: 1001 !important;
 }
+
+/* Make the lock control visually lighter without changing its function. */
+.widget-lock {
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+}
+
+.widget-lock svg {
+  width: 10px;
+  height: 10px;
+}
+
+@media (max-width: 700px) {
+  .widget-lock,
+  .timer-widget > .widget-lock {
+    top: 14px;
+    left: 42px;
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+  }
+
+  .widget-lock svg {
+    width: 9px;
+    height: 9px;
+  }
+}
