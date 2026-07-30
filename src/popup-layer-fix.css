@@ -7,11 +7,12 @@
   z-index: 1001 !important;
 }
 
-/* Keep the time-choice control compact while preserving the same position. */
+/* Keep the time-choice control compact and clear of the lock button. */
 .timer-preset-control {
   width: 108px;
   min-width: 108px;
   max-width: 108px;
+  transform: translateX(10px);
 }
 
 .timer-preset-trigger {
@@ -32,6 +33,7 @@
     width: 96px;
     min-width: 96px;
     max-width: 96px;
+    transform: translateX(16px);
   }
 
   .timer-preset-trigger {
