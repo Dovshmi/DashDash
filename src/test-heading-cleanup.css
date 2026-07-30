@@ -132,14 +132,27 @@
   left: 10px;
   width: 24px;
   height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   padding: 0;
   border-radius: 7px;
   background: rgba(30, 41, 59, .82);
   color: #94a3b8;
-  font-size: .82rem;
   line-height: 1;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
+}
+
+.widget-lock svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: none;
 }
 
 .timer-widget > .widget-lock {
@@ -279,9 +292,15 @@
   }
 
   .widget-lock {
-    width: 26px;
-    height: 26px;
-    left: 9px;
+    top: 10px;
+    left: 42px;
+    width: 24px;
+    height: 24px;
+  }
+
+  .timer-widget > .widget-lock {
+    top: 10px;
+    left: 42px;
   }
 
   .timer-settings-popup {
