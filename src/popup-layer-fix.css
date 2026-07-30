@@ -29,6 +29,10 @@
 }
 
 @media (max-width: 700px) {
+  .topbar-actions > .bsmart {
+    margin-right: auto;
+  }
+
   .timer-mobile-preset-title > div:first-child {
     display: flex;
     align-items: center;
