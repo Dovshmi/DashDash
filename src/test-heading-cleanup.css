@@ -1,6 +1,5 @@
 /* Visual cleanup tested on the test branch before promotion to main. */
 
-/* Remove the large white page heading while keeping the action controls. */
 .topbar > div:first-child {
   display: none;
 }
@@ -9,14 +8,13 @@
   justify-content: flex-end;
 }
 
-/* Keep only the compact eyebrow label inside every widget. */
 .card-heading h2 {
   display: none;
 }
 
 .card-heading {
   min-height: 24px;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
   padding-left: 42px;
   align-items: flex-start;
 }
@@ -25,7 +23,6 @@
   margin-bottom: 0;
 }
 
-/* Keep status text clear of the remove button in the top-left corner. */
 .save-note,
 .live-dot {
   padding-top: 0;
@@ -38,16 +35,17 @@
 
 .timer-preset-control {
   position: relative;
-  z-index: 12;
-  max-width: 58%;
-  min-width: 150px;
-  flex: 0 0 auto;
+  z-index: 40;
+  width: min(220px, 64%);
+  margin: 0 0 12px auto;
   touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .timer-preset-trigger {
   width: 100%;
-  min-height: 38px;
+  min-height: 40px;
   border: 1px solid #31455f;
   border-radius: 10px;
   padding: 9px 14px;
@@ -60,13 +58,12 @@
   outline: none;
   cursor: pointer;
   touch-action: manipulation;
-  transition: background .16s, border-color .16s, transform .16s;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .timer-preset-trigger:hover:not(:disabled) {
   background: #2a405f;
   border-color: #46617f;
-  transform: translateY(-1px);
 }
 
 .timer-preset-trigger:focus-visible {
@@ -88,7 +85,7 @@
   top: calc(100% + 6px);
   right: 0;
   left: 0;
-  z-index: 30;
+  z-index: 100;
   display: grid;
   gap: 5px;
   padding: 6px;
@@ -105,6 +102,7 @@
 
 .timer-preset-option {
   width: 100%;
+  min-height: 42px;
   border-radius: 8px;
   padding: 10px 12px;
   background: transparent;
@@ -113,6 +111,7 @@
   font-weight: 700;
   text-align: center;
   touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .timer-preset-option:hover,
@@ -216,25 +215,25 @@
 
   .card-heading {
     min-height: 26px;
-    margin-bottom: 10px;
+    margin-bottom: 6px;
     padding-left: 44px;
   }
 
   .timer-preset-control {
-    max-width: 64%;
-    min-width: 138px;
+    width: min(210px, 72%);
+    margin-bottom: 12px;
   }
 
   .timer-preset-trigger {
-    min-height: 36px;
-    padding: 8px 10px;
-    font-size: .78rem;
+    min-height: 44px;
+    padding: 10px 12px;
+    font-size: .82rem;
   }
 
   .timer-preset-option {
-    min-height: 42px;
-    padding: 11px 10px;
-    font-size: .82rem;
+    min-height: 46px;
+    padding: 12px 10px;
+    font-size: .84rem;
   }
 
   .timer-settings-popup {
