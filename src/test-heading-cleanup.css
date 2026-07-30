@@ -1,0 +1,50 @@
+/* Visual cleanup tested on the test branch before promotion to main. */
+
+/* Remove the large white page heading while keeping the action controls. */
+.topbar > div:first-child {
+  display: none;
+}
+
+.topbar {
+  justify-content: flex-end;
+}
+
+/* Keep only the compact eyebrow label inside every widget. */
+.card-heading h2 {
+  display: none;
+}
+
+.card-heading {
+  min-height: 24px;
+  margin-bottom: 12px;
+  padding-left: 42px;
+  align-items: flex-start;
+}
+
+.card-heading .eyebrow {
+  margin-bottom: 0;
+}
+
+/* Keep status text clear of the remove button in the top-left corner. */
+.save-note,
+.live-dot {
+  padding-top: 0;
+  line-height: 1.25;
+}
+
+@media (max-width: 700px) {
+  .topbar {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .topbar-actions {
+    width: 100%;
+  }
+
+  .card-heading {
+    min-height: 26px;
+    margin-bottom: 10px;
+    padding-left: 44px;
+  }
+}
