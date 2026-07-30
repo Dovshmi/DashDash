@@ -5,6 +5,20 @@ const MOBILE_WIDGETS_KEY = 'work-tools:mobile-active-widgets-v1';
 const DEFAULT_DESKTOP_WIDGETS = ['translate', 'timer', 'notes', 'drawing'];
 const DEFAULT_MOBILE_WIDGETS = ['timer', 'notes', 'drawing'];
 
+const OPEN_LOCK_ICON = `
+  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+    <path d="M8 10V7.5a4 4 0 0 1 7.2-2.4" />
+    <rect x="5" y="10" width="14" height="10" rx="2" />
+    <path d="M12 14v2.5" />
+  </svg>`;
+
+const CLOSED_LOCK_ICON = `
+  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+    <path d="M8 10V7.5a4 4 0 0 1 8 0V10" />
+    <rect x="5" y="10" width="14" height="10" rx="2" />
+    <path d="M12 14v2.5" />
+  </svg>`;
+
 let enhancementScheduled = false;
 
 function readJson(key, fallback) {
@@ -67,7 +81,7 @@ function updateLockButton(widget, button) {
 
   const locked = isWidgetLocked(widgetId);
   widget.classList.toggle('widget-locked', locked);
-  button.textContent = locked ? '🔒' : '🔓';
+  button.innerHTML = locked ? CLOSED_LOCK_ICON : OPEN_LOCK_ICON;
   button.setAttribute('aria-pressed', String(locked));
   button.setAttribute('aria-label', locked ? `פתח את ${widgetLabel(widget)}` : `נעל את ${widgetLabel(widget)}`);
   button.title = locked ? 'פתח כלי להזזה ושינוי גודל' : 'נעל כלי במקום ובגודל הנוכחיים';
@@ -98,8 +112,6 @@ function toggleWidgetLock(widget) {
   layout[itemIndex] = nextItem;
   localStorage.setItem(layoutKey, JSON.stringify(layout));
 
-  // Reload once so React Grid Layout receives the new static property directly.
-  // The saved x/y/w/h values are unchanged, so the widget stays exactly in place.
   window.location.reload();
 }
 
