@@ -7,7 +7,7 @@
   z-index: 1001 !important;
 }
 
-/* Keep the time-choice control compact and clear of the lock button. */
+/* Keep the time-choice control compact. */
 .timer-preset-control {
   width: 108px;
   min-width: 108px;
@@ -29,11 +29,21 @@
 }
 
 @media (max-width: 700px) {
-  .timer-preset-control {
+  .timer-mobile-preset-title > div:first-child {
+    display: flex;
+    align-items: center;
+  }
+
+  .timer-mobile-preset-title > div:first-child > .eyebrow {
+    display: none;
+  }
+
+  .timer-mobile-preset-title .timer-preset-control {
     width: 96px;
     min-width: 96px;
     max-width: 96px;
-    transform: translateX(16px);
+    transform: none;
+    margin: 0;
   }
 
   .timer-preset-trigger {
