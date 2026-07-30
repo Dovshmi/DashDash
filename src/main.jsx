@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import App from './App.jsx';
 import './styles.css';
 import './test-heading-cleanup.css';
+import './popup-layer-fix.css';
 import './timer-preset-select.js';
 import './widget-locks.js';
 
