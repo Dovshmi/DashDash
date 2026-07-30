@@ -4,6 +4,7 @@ import App from './App.jsx';
 import './styles.css';
 import './test-heading-cleanup.css';
 import './timer-preset-select.js';
+import './widget-locks.js';
 
 createRoot(document.getElementById('root')).render(
   <StrictMode><App /></StrictMode>,
