@@ -3,7 +3,7 @@ import ReactGridLayout, { useContainerWidth } from 'react-grid-layout';
 import { verticalCompactor } from 'react-grid-layout/core';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
-import { createDefaultDashboardLayout, formatAlertDuration, formatDuration, formatPersonalTotal, formatSessionDuration, keyboardTranslate, normalizeDashboardLayout, normalizeWidgetIds, parseAlertDuration, removeHistoryItem, shouldSendPersonalTimeAlert, toDateKey } from './utils.js';
+import { createDefaultDashboardLayout, formatAlertDuration, formatDuration, formatPersonalTotal, formatSessionDuration, keyboardTranslate, normalizeDashboardLayout, normalizeWidgetIds, removeHistoryItem, shouldSendPersonalTimeAlert, toDateKey } from './utils.js';
 
 const STORAGE = {
   notes: 'work-tools:notes',
@@ -39,6 +39,11 @@ const MOBILE_DASHBOARD_LAYOUT = [
   { i: 'translate', x: 0, y: 39, w: 4, h: 11, minW: 1, minH: 7 },
 ];
 
+const DEFAULT_TIMER_PRESETS = [
+  { id: 'personal', name: 'זמן אישי', minutes: 6, seconds: 0 },
+  { id: 'break', name: 'זמן הפסקה', minutes: 26, seconds: 0 },
+];
+
 function load(key, fallback) {
   try {
     const stored = localStorage.getItem(key);
@@ -46,6 +51,38 @@ function load(key, fallback) {
   } catch {
     return fallback;
   }
+}
+
+function clampInteger(value, min, max) {
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isFinite(parsed)) return min;
+  return Math.max(min, Math.min(max, parsed));
+}
+
+function normalizeTimerSettings(saved) {
+  const savedPresets = Array.isArray(saved?.presets) ? saved.presets : [];
+  const presets = savedPresets
+    .filter((preset) => preset && typeof preset.id === 'string')
+    .map((preset, index) => ({
+      id: preset.id,
+      name: typeof preset.name === 'string' && preset.name.trim() ? preset.name : `זמן ${index + 1}`,
+      minutes: clampInteger(preset.minutes, 0, 999),
+      seconds: clampInteger(preset.seconds, 0, 59),
+    }));
+  const normalizedPresets = presets.length ? presets : DEFAULT_TIMER_PRESETS.map((preset) => ({ ...preset }));
+  const selectedPresetId = normalizedPresets.some((preset) => preset.id === saved?.selectedPresetId)
+    ? saved.selectedPresetId
+    : normalizedPresets[0].id;
+  return {
+    recipientEmail: typeof saved?.recipientEmail === 'string' ? saved.recipientEmail : '',
+    presets: normalizedPresets,
+    selectedPresetId,
+  };
+}
+
+function presetSeconds(preset) {
+  if (!preset) return 0;
+  return clampInteger(preset.minutes, 0, 999) * 60 + clampInteger(preset.seconds, 0, 59);
 }
 
 function formatClock(iso) {
@@ -141,13 +178,9 @@ export default function App() {
   const [sessions, setSessions] = useState(() => load(STORAGE.sessions, []));
   const [translations, setTranslations] = useState(() => load(STORAGE.translations, []));
   const [startedAt, setStartedAt] = useState(null);
+  const [runningPreset, setRunningPreset] = useState(null);
   const [now, setNow] = useState(Date.now());
-  const [timeAlert, setTimeAlert] = useState(() => {
-    const saved = load(STORAGE.timeAlert, { recipientEmail: '', thresholdSeconds: 900 });
-    const thresholdSeconds = Number(saved?.thresholdSeconds) || Number(saved?.thresholdMinutes) * 60 || 900;
-    return { recipientEmail: saved?.recipientEmail ?? '', thresholdSeconds };
-  });
-  const [timeAlertInput, setTimeAlertInput] = useState(() => formatAlertDuration(timeAlert.thresholdSeconds));
+  const [timerSettings, setTimerSettings] = useState(() => normalizeTimerSettings(load(STORAGE.timeAlert, null)));
   const [timeAlertStatus, setTimeAlertStatus] = useState('');
   const sentAlertSessionRef = useRef(null);
   const [translation, setTranslation] = useState('');
@@ -165,6 +198,9 @@ export default function App() {
   const currentWidgetIds = isMobile ? mobileWidgetIds : activeWidgetIds;
   const currentLayout = isMobile ? mobileLayout : layout;
   const currentTemplates = isMobile ? MOBILE_DASHBOARD_LAYOUT : DASHBOARD_LAYOUT;
+  const selectedPreset = timerSettings.presets.find((preset) => preset.id === timerSettings.selectedPresetId) ?? timerSettings.presets[0];
+  const timerPreset = runningPreset ?? selectedPreset;
+  const timerThresholdSeconds = presetSeconds(timerPreset);
 
   useEffect(() => { localStorage.setItem(STORAGE.notes, JSON.stringify(notesById)); }, [notesById]);
   useEffect(() => { localStorage.setItem(STORAGE.sessions, JSON.stringify(sessions)); }, [sessions]);
@@ -173,7 +209,7 @@ export default function App() {
   useEffect(() => { localStorage.setItem(STORAGE.mobileLayout, JSON.stringify(mobileLayout)); }, [mobileLayout]);
   useEffect(() => { localStorage.setItem(STORAGE.widgets, JSON.stringify(activeWidgetIds)); }, [activeWidgetIds]);
   useEffect(() => { localStorage.setItem(STORAGE.mobileWidgets, JSON.stringify(mobileWidgetIds)); }, [mobileWidgetIds]);
-  useEffect(() => { localStorage.setItem(STORAGE.timeAlert, JSON.stringify(timeAlert)); }, [timeAlert]);
+  useEffect(() => { localStorage.setItem(STORAGE.timeAlert, JSON.stringify(timerSettings)); }, [timerSettings]);
   useEffect(() => {
     if (!startedAt) return undefined;
     const timer = window.setInterval(() => setNow(Date.now()), 1000);
@@ -192,8 +228,8 @@ export default function App() {
     }
     if (!shouldSendPersonalTimeAlert({
       elapsedMilliseconds: elapsed,
-      thresholdSeconds: timeAlert.thresholdSeconds,
-      recipientEmail: timeAlert.recipientEmail,
+      thresholdSeconds: timerThresholdSeconds,
+      recipientEmail: timerSettings.recipientEmail,
       alreadySent: sentAlertSessionRef.current === startedAt,
     })) return;
 
@@ -202,14 +238,18 @@ export default function App() {
     fetch('/api/send-time-alert', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(timeAlert),
+      body: JSON.stringify({
+        recipientEmail: timerSettings.recipientEmail,
+        thresholdSeconds: timerThresholdSeconds,
+        timerName: timerPreset?.name ?? 'זמן אישי',
+      }),
     })
       .then(async (response) => {
         if (!response.ok) throw new Error((await response.json().catch(() => ({}))).error);
         setTimeAlertStatus('התראת המייל נשלחה.');
       })
       .catch(() => setTimeAlertStatus('לא הצלחנו לשלוח התראה. בדוק את הגדרת שירות המייל.'));
-  }, [elapsed, startedAt, timeAlert]);
+  }, [elapsed, startedAt, timerPreset, timerSettings.recipientEmail, timerThresholdSeconds]);
   const availableWidgets = WIDGETS.filter((widget) => widget.repeatable || !currentWidgetIds.includes(widget.id));
 
   function addWidget(type) {
@@ -244,6 +284,34 @@ export default function App() {
     setLayout(createDefaultDashboardLayout(activeWidgetIds, DASHBOARD_LAYOUT));
   }
 
+  function updatePreset(id, patch) {
+    setTimerSettings((current) => ({
+      ...current,
+      presets: current.presets.map((preset) => preset.id === id ? { ...preset, ...patch } : preset),
+    }));
+  }
+
+  function addTimerPreset() {
+    const id = `custom:${crypto.randomUUID()}`;
+    setTimerSettings((current) => ({
+      ...current,
+      presets: [...current.presets, { id, name: 'זמן חדש', minutes: 10, seconds: 0 }],
+      selectedPresetId: id,
+    }));
+  }
+
+  function removeTimerPreset(id) {
+    if (startedAt || !id.startsWith('custom:')) return;
+    setTimerSettings((current) => {
+      const presets = current.presets.filter((preset) => preset.id !== id);
+      return {
+        ...current,
+        presets,
+        selectedPresetId: current.selectedPresetId === id ? presets[0].id : current.selectedPresetId,
+      };
+    });
+  }
+
   async function translateClipboard() {
     try {
       if (!navigator.clipboard?.readText || !navigator.clipboard?.writeText) throw new Error('clipboard');
@@ -269,15 +337,27 @@ export default function App() {
 
   function toggleTimer() {
     if (!startedAt) {
+      if (!selectedPreset || presetSeconds(selectedPreset) <= 0) {
+        setTimeAlertStatus('יש להגדיר זמן גדול מאפס.');
+        return;
+      }
       sentAlertSessionRef.current = null;
       setTimeAlertStatus('');
+      setRunningPreset({ ...selectedPreset });
       setStartedAt(new Date().toISOString());
       setNow(Date.now());
       return;
     }
     const endedAt = new Date().toISOString();
-    setSessions((current) => [{ id: crypto.randomUUID(), startedAt, endedAt }, ...current]);
+    setSessions((current) => [{
+      id: crypto.randomUUID(),
+      startedAt,
+      endedAt,
+      timerName: runningPreset?.name ?? selectedPreset?.name ?? 'זמן אישי',
+      presetId: runningPreset?.id ?? selectedPreset?.id,
+    }, ...current]);
     setStartedAt(null);
+    setRunningPreset(null);
     setNow(Date.now());
   }
 
@@ -327,29 +407,40 @@ export default function App() {
         </div>}
       </section></div>}
 
-      {currentWidgetIds.includes('timer') && <div key="timer" className="dashboard-widget"><button className="widget-remove" onClick={() => removeWidget('timer')} aria-label="הסר כלי זמן אישי" title="הסר כלי">×</button><button className="widget-settings" onClick={() => setShowTimeAlertSettings((visible) => !visible)} aria-expanded={showTimeAlertSettings} aria-controls="time-alert-popup" aria-label="הגדרות התראת מייל" title="הגדרות התראת מייל">⚙</button><section className="card timer-card">
-        <div className="card-heading drag-handle"><div><p className="eyebrow">זמן אישי</p><h2>מד זמן בלחיצה</h2></div><span className={startedAt ? 'live-dot' : 'save-note'}>{startedAt ? 'פועל עכשיו' : 'מוכן'}</span></div>
+      {currentWidgetIds.includes('timer') && <div key="timer" className="dashboard-widget"><button className="widget-remove" onClick={() => removeWidget('timer')} aria-label="הסר כלי זמן אישי" title="הסר כלי">×</button><button className="widget-settings" onClick={() => setShowTimeAlertSettings((visible) => !visible)} aria-expanded={showTimeAlertSettings} aria-controls="time-alert-popup" aria-label="הגדרות זמנים והתראת מייל" title="הגדרות זמנים והתראת מייל">⚙</button><section className="card timer-card">
+        <div className="card-heading drag-handle"><div><p className="eyebrow">זמן אישי</p><h2>מד זמן בלחיצה</h2></div><select className={startedAt ? 'timer-preset-select running' : 'timer-preset-select'} value={timerSettings.selectedPresetId} disabled={Boolean(startedAt)} onChange={(event) => setTimerSettings((current) => ({ ...current, selectedPresetId: event.target.value }))} aria-label="בחירת סוג הזמן">{timerSettings.presets.map((preset) => <option key={preset.id} value={preset.id}>{preset.name} · {formatAlertDuration(presetSeconds(preset))}</option>)}</select></div>
         <div className="timer">{formatDuration(elapsed)}</div>
-        <button className={startedAt ? 'stop-button' : 'primary-button'} onClick={toggleTimer}>{startedAt ? 'סיים זמן אישי' : 'התחל זמן אישי'}</button>
-        <div className="summary"><span>סה״כ אישי היום</span><strong>{formatPersonalTotal(todaySessions)}</strong></div>
+        <button className={startedAt ? 'stop-button' : 'primary-button'} onClick={toggleTimer}>{startedAt ? `סיים ${timerPreset?.name ?? 'זמן'}` : `התחל ${selectedPreset?.name ?? 'זמן'}`}</button>
+        <div className="summary"><span>סה״כ זמן היום</span><strong>{formatPersonalTotal(todaySessions)}</strong></div>
         <button className="history-toggle" onClick={() => setShowTimerHistory((visible) => !visible)} aria-expanded={showTimerHistory}>
-          <span className="sr-only">היסטוריית זמן אישי ({sessions.length})</span><span className={showTimerHistory ? 'arrow open' : 'arrow'}>⌄</span>
+          <span className="sr-only">היסטוריית זמן ({sessions.length})</span><span className={showTimerHistory ? 'arrow open' : 'arrow'}>⌄</span>
         </button>
         {showTimerHistory && <div className="history-panel">
-          {sessions.length === 0 ? <p className="empty-history">עדיין אין זמני אישי בהיסטוריה.</p> : <ul className="personal-history">
+          {sessions.length === 0 ? <p className="empty-history">עדיין אין זמנים בהיסטוריה.</p> : <ul className="personal-history">
             {sessions.map((session) => <li key={session.id}>
-              <button className="history-delete" onClick={() => removeSession(session.id)} aria-label="מחק זמן אישי זה" title="מחק">×</button>
-              <small>{formatDate(session.startedAt)}</small>
+              <button className="history-delete" onClick={() => removeSession(session.id)} aria-label="מחק זמן זה" title="מחק">×</button>
+              <small>{formatDate(session.startedAt)} · {session.timerName ?? 'זמן אישי'}</small>
               <div className="personal-time-row"><span>התחלה <b>{formatClock(session.startedAt)}</b></span><span>סיום <b>{formatClock(session.endedAt)}</b></span><strong>{formatSessionDuration(session)}</strong></div>
             </li>)}
           </ul>}
         </div>}
       </section>
-      {showTimeAlertSettings && <aside id="time-alert-popup" className="time-alert-popup" aria-label="הגדרות התראת מייל">
-        <div className="time-alert-popup-heading"><h3>התראת מייל</h3><button onClick={() => setShowTimeAlertSettings(false)} aria-label="סגור הגדרות התראת מייל" title="סגור">×</button></div>
-        <label>כתובת מייל<input type="email" value={timeAlert.recipientEmail} onChange={(event) => setTimeAlert((current) => ({ ...current, recipientEmail: event.target.value }))} placeholder="you@example.com" /></label>
-        <label>שלח אחרי<input className="alert-duration" type="text" inputMode="numeric" value={timeAlertInput} onChange={(event) => { const value = event.target.value; setTimeAlertInput(value); const thresholdSeconds = parseAlertDuration(value); if (thresholdSeconds !== null) setTimeAlert((current) => ({ ...current, thresholdSeconds })); }} onBlur={() => setTimeAlertInput(formatAlertDuration(timeAlert.thresholdSeconds))} aria-label="זמן להתראה בפורמט דקות ושניות" placeholder="15:00" /><span>דקות:שניות</span></label>
-        <p>ההתראה נשלחת פעם אחת בזמן שהאתר פתוח.</p>
+      {showTimeAlertSettings && <aside id="time-alert-popup" className="time-alert-popup timer-settings-popup" aria-label="הגדרות זמנים והתראת מייל">
+        <div className="time-alert-popup-heading"><h3>זמנים והתראת מייל</h3><button onClick={() => setShowTimeAlertSettings(false)} aria-label="סגור הגדרות" title="סגור">×</button></div>
+        <div className="timer-presets-settings">
+          {timerSettings.presets.map((preset) => <div className="timer-preset-row" key={preset.id}>
+            <input className="timer-preset-name" type="text" value={preset.name} disabled={Boolean(startedAt)} onChange={(event) => updatePreset(preset.id, { name: event.target.value })} aria-label="שם הזמן" />
+            <div className="timer-duration-fields" dir="ltr">
+              <input type="text" inputMode="numeric" maxLength="3" value={String(preset.minutes).padStart(2, '0')} disabled={Boolean(startedAt)} onFocus={(event) => event.target.select()} onChange={(event) => updatePreset(preset.id, { minutes: clampInteger(event.target.value.replace(/\D/g, ''), 0, 999) })} aria-label={`דקות עבור ${preset.name}`} />
+              <span>:</span>
+              <input type="text" inputMode="numeric" maxLength="2" value={String(preset.seconds).padStart(2, '0')} disabled={Boolean(startedAt)} onFocus={(event) => event.target.select()} onChange={(event) => updatePreset(preset.id, { seconds: clampInteger(event.target.value.replace(/\D/g, ''), 0, 59) })} aria-label={`שניות עבור ${preset.name}`} />
+            </div>
+            {preset.id.startsWith('custom:') && <button className="timer-preset-delete" disabled={Boolean(startedAt)} onClick={() => removeTimerPreset(preset.id)} aria-label={`מחק ${preset.name}`} title="מחק זמן">×</button>}
+          </div>)}
+          <button className="timer-preset-add" disabled={Boolean(startedAt)} onClick={addTimerPreset}>＋ הוסף זמן</button>
+        </div>
+        <label className="timer-email-setting">כתובת מייל<input type="email" value={timerSettings.recipientEmail} onChange={(event) => setTimerSettings((current) => ({ ...current, recipientEmail: event.target.value }))} placeholder="you@example.com" /></label>
+        <p>{startedAt ? 'הזמן שנבחר נעול עד לעצירת הטיימר.' : 'הבחירה וההגדרות נשמרות בדפדפן הזה.'}</p>
         {timeAlertStatus && <p className="time-alert-status" role="status">{timeAlertStatus}</p>}
       </aside>}
       </div>}
