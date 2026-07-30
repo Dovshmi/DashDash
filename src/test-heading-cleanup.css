@@ -14,7 +14,7 @@
 
 .card-heading {
   min-height: 24px;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
   padding-left: 42px;
   align-items: flex-start;
 }
@@ -35,9 +35,10 @@
 
 .timer-preset-control {
   position: relative;
-  z-index: 40;
-  width: min(220px, 64%);
-  margin: 0 0 12px auto;
+  z-index: 12;
+  max-width: 58%;
+  min-width: 150px;
+  flex: 0 0 auto;
   touch-action: manipulation;
   -webkit-user-select: none;
   user-select: none;
@@ -45,7 +46,7 @@
 
 .timer-preset-trigger {
   width: 100%;
-  min-height: 40px;
+  min-height: 38px;
   border: 1px solid #31455f;
   border-radius: 10px;
   padding: 9px 14px;
@@ -59,11 +60,13 @@
   cursor: pointer;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
+  transition: background .16s, border-color .16s, transform .16s;
 }
 
 .timer-preset-trigger:hover:not(:disabled) {
   background: #2a405f;
   border-color: #46617f;
+  transform: translateY(-1px);
 }
 
 .timer-preset-trigger:focus-visible {
@@ -215,25 +218,25 @@
 
   .card-heading {
     min-height: 26px;
-    margin-bottom: 6px;
+    margin-bottom: 10px;
     padding-left: 44px;
   }
 
   .timer-preset-control {
-    width: min(210px, 72%);
-    margin-bottom: 12px;
+    max-width: 64%;
+    min-width: 138px;
   }
 
   .timer-preset-trigger {
-    min-height: 44px;
-    padding: 10px 12px;
-    font-size: .82rem;
+    min-height: 36px;
+    padding: 8px 10px;
+    font-size: .78rem;
   }
 
   .timer-preset-option {
-    min-height: 46px;
-    padding: 12px 10px;
-    font-size: .84rem;
+    min-height: 42px;
+    padding: 11px 10px;
+    font-size: .82rem;
   }
 
   .timer-settings-popup {
