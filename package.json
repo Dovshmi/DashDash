@@ -15,6 +15,7 @@
   "dependencies": {
     "@vitejs/plugin-react": "latest",
     "nodemailer": "^9.0.3",
+    "oui-data": "2.1.40",
     "react": "latest",
     "react-dom": "latest",
     "react-grid-layout": "^2.2.4"
