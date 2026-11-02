@@ -33,7 +33,7 @@ function localApi() {
       if (!res.writableEnded) res.status(500).json({ error: 'Local server error' });
     }
   });
-  return { name: 'dashdash-local-api', configureServer: mount, configurePreviewServer: mount };
+  return { name: 'dashdash-local-api', configureServer(server) { mount(server); }, configurePreviewServer(server) { mount(server); } };
 }
 
 export default defineConfig({ plugins: [react(), localApi()] });
