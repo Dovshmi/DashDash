@@ -39,6 +39,13 @@ describe('Pocket networking integrated with DashDash', () => {
     expect(res.body.results[0]).toMatchObject({mac:'0E:F6:5A:FB:7A:26',vendor:'Locally administered / randomized',registry:'Special'});
     expect(res.body.results[1]).toMatchObject({vendor:'Invalid MAC'});
   });
+  it('resolves a real IEEE manufacturer without downloading data at request time', async () => {
+    const res = mockResponse();
+    await macHandler({method:'POST',body:{macs:['00:00:0C:12:34:56']}},res);
+    expect(res.code).toBe(200);
+    expect(res.body.results[0].vendor).toMatch(/Cisco/i);
+    expect(res.body.results[0].registry).toBe('MA-L');
+  });
   it('rejects private, local and non-global targets from TCP checks', async () => {
     for (const ip of ['127.0.0.1','192.168.1.2','10.0.0.1','169.254.169.254','172.16.0.1','192.0.2.1']) {
       const res = mockResponse();
