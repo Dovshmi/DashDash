@@ -457,8 +457,8 @@ export default function App() {
         <textarea aria-label="דף קשקוש לכתיבה" value={notesById[widgetId] ?? ''} onChange={(event) => setNotesById((current) => ({ ...current, [widgetId]: event.target.value }))} placeholder="כתוב כאן כל מה שצריך..." />
       </section></div>)}
       {currentWidgetIds.filter((widgetId) => widgetId.split(':', 1)[0] === 'drawing').map((widgetId) => <div key={widgetId} className="dashboard-widget"><button className="widget-remove" onClick={() => removeWidget(widgetId)} aria-label="הסר כלי כתיבה וציור" title="הסר כלי">×</button><DrawingBoard widgetId={widgetId} /></div>)}
-      {currentWidgetIds.includes('mac') && <div key="mac" className="dashboard-widget"><button className="widget-remove" onClick={() => removeWidget('mac')} aria-label="הסר בדיקת MAC" title="הסר כלי">×</button><MacCheck /></div>}
-      {currentWidgetIds.includes('ports') && <div key="ports" className="dashboard-widget"><button className="widget-remove" onClick={() => removeWidget('ports')} aria-label="הסר בדיקת פורטים" title="הסר כלי">×</button><PortCheck /></div>}
+      {currentWidgetIds.includes('mac') && <div key="mac" data-widget-id="mac" className="dashboard-widget"><button className="widget-remove" onClick={() => removeWidget('mac')} aria-label="הסר בדיקת MAC" title="הסר כלי">×</button><MacCheck /></div>}
+      {currentWidgetIds.includes('ports') && <div key="ports" data-widget-id="ports" className="dashboard-widget"><button className="widget-remove" onClick={() => removeWidget('ports')} aria-label="הסר בדיקת פורטים" title="הסר כלי">×</button><PortCheck /></div>}
       </ReactGridLayout>}
     </div>
     <footer>המידע נשמר מקומית בדפדפן הזה בלבד.</footer>
