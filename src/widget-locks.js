@@ -154,7 +154,7 @@ function enhanceAllWidgets() {
 }
 
 function scheduleEnhancement() {
-  if (enhancementScheduled) return;
+  if (enhancementScheduled || typeof requestAnimationFrame !== 'function') return;
   enhancementScheduled = true;
   requestAnimationFrame(enhanceAllWidgets);
 }
