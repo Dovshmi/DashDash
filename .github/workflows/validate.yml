@@ -1,0 +1,48 @@
+name: Validate DashDash
+on:
+  push:
+    branches: [main, feature/pocket-network-tools]
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+      - name: Verify local API routes return JSON
+        run: |
+          npm run dev -- --host 127.0.0.1 > /tmp/dashdash-vite.log 2>&1 &
+          trap 'cat /tmp/dashdash-vite.log' EXIT
+          for i in $(seq 1 30); do
+            if curl --silent --fail http://127.0.0.1:5173/ >/dev/null; then break; fi
+            sleep 1
+          done
+          curl --fail-with-body --silent -H 'Content-Type: application/json' \
+            -d '{"macs":["0e:f6:5a:fb:7a:26"]}' http://127.0.0.1:5173/api/mac-lookup \
+            | node -e "let t='';process.stdin.on('data',x=>t+=x).on('end',()=>{const d=JSON.parse(t);if(d.results?.[0]?.vendor!=='Locally administered / randomized')process.exit(1);})"
+          curl --silent -H 'Content-Type: application/json' \
+            -d '{"ip":"192.168.1.1","ports":"443"}' http://127.0.0.1:5173/api/port-check \
+            | node -e "let t='';process.stdin.on('data',x=>t+=x).on('end',()=>{const d=JSON.parse(t);if(!d.error?.includes('public IPv4'))process.exit(1);})"
+      - name: Verify TCP public target and IEEE assigned manufacturer lookup
+        run: |
+          npm run dev -- --host 127.0.0.1 > /tmp/dashdash-vite-extended.log 2>&1 &
+          trap 'cat /tmp/dashdash-vite-extended.log' EXIT
+          for i in $(seq 1 30); do
+            if curl --silent --fail http://127.0.0.1:5173/ >/dev/null; then break; fi
+            sleep 1
+          done
+          curl --fail-with-body --max-time 30 --silent -H 'Content-Type: application/json' \
+            -d '{"macs":["00:00:0C:12:34:56"]}' http://127.0.0.1:5173/api/mac-lookup \
+            | node -e "let t='';process.stdin.on('data',x=>t+=x).on('end',()=>{const d=JSON.parse(t);if(!/cisco/i.test(d.results?.[0]?.vendor||''))throw Error('IEEE manufacturer lookup failed: '+t);console.log('IEEE lookup:',d.results[0].vendor)})"
+          curl --fail-with-body --max-time 15 --silent -H 'Content-Type: application/json' \
+            -d '{"ip":"8.8.8.8","ports":"443"}' http://127.0.0.1:5173/api/port-check \
+            | node -e "let t='';process.stdin.on('data',x=>t+=x).on('end',()=>{const d=JSON.parse(t);const x=d.results?.[0];if(x?.port!==443||!['OPEN','CLOSED','TIMEOUT'].includes(x.status))throw Error('Invalid TCP result: '+t);console.log('TCP result:',x.status)})"

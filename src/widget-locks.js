@@ -57,11 +57,13 @@ function identifyWidgets() {
   let drawingIndex = 0;
 
   document.querySelectorAll('.dashboard-widget').forEach((widget) => {
-    let id = '';
-    if (widget.querySelector('.translate-card')) id = 'translate';
-    else if (widget.querySelector('.timer-card')) id = 'timer';
-    else if (widget.querySelector('.notes-card')) id = notesIds[notesIndex++] ?? '';
-    else if (widget.querySelector('.drawing-card')) id = drawingIds[drawingIndex++] ?? '';
+    let id = widget.dataset.widgetId || '';
+    if (!id && widget.querySelector('.translate-card')) id = 'translate';
+    else if (!id && widget.querySelector('.timer-card')) id = 'timer';
+    else if (!id && widget.querySelector('.notes-card')) id = notesIds[notesIndex++] ?? '';
+    else if (!id && widget.querySelector('.drawing-card')) id = drawingIds[drawingIndex++] ?? '';
+    else if (!id && widget.querySelector('.mac-check-card')) id = 'mac';
+    else if (!id && widget.querySelector('.port-check-card')) id = 'ports';
 
     if (id) widget.dataset.widgetId = id;
   });
@@ -81,7 +83,10 @@ function updateLockButton(widget, button) {
 
   const locked = isWidgetLocked(widgetId);
   widget.classList.toggle('widget-locked', locked);
-  button.innerHTML = locked ? CLOSED_LOCK_ICON : OPEN_LOCK_ICON;
+  if (button.dataset.locked !== String(locked)) {
+    button.innerHTML = locked ? CLOSED_LOCK_ICON : OPEN_LOCK_ICON;
+    button.dataset.locked = String(locked);
+  }
   button.setAttribute('aria-pressed', String(locked));
   button.setAttribute('aria-label', locked ? `פתח את ${widgetLabel(widget)}` : `נעל את ${widgetLabel(widget)}`);
   button.title = locked ? 'פתח כלי להזזה ושינוי גודל' : 'נעל כלי במקום ובגודל הנוכחיים';
@@ -149,7 +154,7 @@ function enhanceAllWidgets() {
 }
 
 function scheduleEnhancement() {
-  if (enhancementScheduled) return;
+  if (enhancementScheduled || typeof requestAnimationFrame !== 'function') return;
   enhancementScheduled = true;
   requestAnimationFrame(enhanceAllWidgets);
 }
