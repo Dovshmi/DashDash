@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { MacCheck, PortCheck } from './NetworkWidgets.jsx';
 import ReactGridLayout, { useContainerWidth } from 'react-grid-layout';
 import { verticalCompactor } from 'react-grid-layout/core';
 import 'react-grid-layout/css/styles.css';
@@ -22,6 +23,8 @@ const WIDGETS = [
   { id: 'timer', name: 'זמן אישי', description: 'מדידת זמן והיסטוריה' },
   { id: 'notes', name: 'דף קשקוש', description: 'פתקים מהירים', repeatable: true },
   { id: 'drawing', name: 'כתיבה וציור', description: 'לוח ציור', repeatable: true },
+  { id: 'mac', name: 'MAC Lookup', description: 'בדיקת יצרן לפי IEEE' },
+  { id: 'ports', name: 'Port Check', description: 'בדיקת פורטי TCP ציבוריים' },
 ];
 const WIDGET_IDS = WIDGETS.map((widget) => widget.id);
 const DASHBOARD_LAYOUT = [
@@ -29,6 +32,8 @@ const DASHBOARD_LAYOUT = [
   { i: 'translate', x: 6, y: 0, w: 6, h: 11, minW: 3, minH: 7 },
   { i: 'notes', x: 0, y: 11, w: 6, h: 14, minW: 4, minH: 6 },
   { i: 'drawing', x: 6, y: 11, w: 6, h: 14, minW: 5, minH: 10 },
+  { i: 'mac', x: 0, y: 25, w: 6, h: 12, minW: 4, minH: 8 },
+  { i: 'ports', x: 6, y: 25, w: 6, h: 12, minW: 4, minH: 8 },
 ];
 
 const MOBILE_WIDGET_IDS = ['timer', 'notes', 'drawing'];
@@ -37,6 +42,8 @@ const MOBILE_DASHBOARD_LAYOUT = [
   { i: 'notes', x: 0, y: 11, w: 4, h: 14, minW: 1, minH: 6 },
   { i: 'drawing', x: 0, y: 25, w: 4, h: 14, minW: 1, minH: 10 },
   { i: 'translate', x: 0, y: 39, w: 4, h: 11, minW: 1, minH: 7 },
+  { i: 'mac', x: 0, y: 50, w: 4, h: 12, minW: 1, minH: 8 },
+  { i: 'ports', x: 0, y: 62, w: 4, h: 12, minW: 1, minH: 8 },
 ];
 
 const DEFAULT_TIMER_PRESETS = [
@@ -450,6 +457,8 @@ export default function App() {
         <textarea aria-label="דף קשקוש לכתיבה" value={notesById[widgetId] ?? ''} onChange={(event) => setNotesById((current) => ({ ...current, [widgetId]: event.target.value }))} placeholder="כתוב כאן כל מה שצריך..." />
       </section></div>)}
       {currentWidgetIds.filter((widgetId) => widgetId.split(':', 1)[0] === 'drawing').map((widgetId) => <div key={widgetId} className="dashboard-widget"><button className="widget-remove" onClick={() => removeWidget(widgetId)} aria-label="הסר כלי כתיבה וציור" title="הסר כלי">×</button><DrawingBoard widgetId={widgetId} /></div>)}
+      {currentWidgetIds.includes('mac') && <div key="mac" className="dashboard-widget"><button className="widget-remove" onClick={() => removeWidget('mac')} aria-label="הסר בדיקת MAC" title="הסר כלי">×</button><MacCheck /></div>}
+      {currentWidgetIds.includes('ports') && <div key="ports" className="dashboard-widget"><button className="widget-remove" onClick={() => removeWidget('ports')} aria-label="הסר בדיקת פורטים" title="הסר כלי">×</button><PortCheck /></div>}
       </ReactGridLayout>}
     </div>
     <footer>המידע נשמר מקומית בדפדפן הזה בלבד.</footer>
