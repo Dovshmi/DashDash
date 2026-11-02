@@ -57,11 +57,13 @@ function identifyWidgets() {
   let drawingIndex = 0;
 
   document.querySelectorAll('.dashboard-widget').forEach((widget) => {
-    let id = '';
-    if (widget.querySelector('.translate-card')) id = 'translate';
-    else if (widget.querySelector('.timer-card')) id = 'timer';
-    else if (widget.querySelector('.notes-card')) id = notesIds[notesIndex++] ?? '';
-    else if (widget.querySelector('.drawing-card')) id = drawingIds[drawingIndex++] ?? '';
+    let id = widget.dataset.widgetId || '';
+    if (!id && widget.querySelector('.translate-card')) id = 'translate';
+    else if (!id && widget.querySelector('.timer-card')) id = 'timer';
+    else if (!id && widget.querySelector('.notes-card')) id = notesIds[notesIndex++] ?? '';
+    else if (!id && widget.querySelector('.drawing-card')) id = drawingIds[drawingIndex++] ?? '';
+    else if (!id && widget.querySelector('.mac-check-card')) id = 'mac';
+    else if (!id && widget.querySelector('.port-check-card')) id = 'ports';
 
     if (id) widget.dataset.widgetId = id;
   });
