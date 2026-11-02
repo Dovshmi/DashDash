@@ -31,17 +31,20 @@ async function vendors() {
   if (cache && Date.now() - lastFetched < 86400000) return cache;
   if (!loading) loading = (async () => {
     const map = new Map();
-    for (const [name, url, size] of SOURCES) {
-      try {
-        const response = await fetch(url, { signal: AbortSignal.timeout(9000) });
-        if (!response.ok) throw Error('HTTP '+response.status);
-        const csv = await response.text();
-        if (csv.length > 30000000) throw Error('IEEE CSV too large');
+    const downloads = await Promise.allSettled(SOURCES.map(async ([name, url, size]) => {
+      const response = await fetch(url, { signal: AbortSignal.timeout(8000) });
+      if (!response.ok) throw Error('IEEE ' + name + ' HTTP ' + response.status);
+      const csv = await response.text();
+      if (csv.length > 30000000) throw Error('IEEE CSV too large');
+      return { csv, size, name };
+    }));
+    for (const item of downloads) {
+      if (item.status === 'fulfilled') {
+        const { csv, size, name } = item.value;
         records(csv, size, name, map);
-      } catch (e) {
-        if (!cache) throw Error('Unable to download IEEE '+name+' database: '+e.message);
       }
     }
+    if (!map.size && !cache) throw Error('IEEE registry downloads failed');
     if (map.size) { cache = map; lastFetched = Date.now(); }
     return cache;
   })().finally(() => { loading = null; });
