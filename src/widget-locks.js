@@ -83,7 +83,10 @@ function updateLockButton(widget, button) {
 
   const locked = isWidgetLocked(widgetId);
   widget.classList.toggle('widget-locked', locked);
-  button.innerHTML = locked ? CLOSED_LOCK_ICON : OPEN_LOCK_ICON;
+  if (button.dataset.locked !== String(locked)) {
+    button.innerHTML = locked ? CLOSED_LOCK_ICON : OPEN_LOCK_ICON;
+    button.dataset.locked = String(locked);
+  }
   button.setAttribute('aria-pressed', String(locked));
   button.setAttribute('aria-label', locked ? `פתח את ${widgetLabel(widget)}` : `נעל את ${widgetLabel(widget)}`);
   button.title = locked ? 'פתח כלי להזזה ושינוי גודל' : 'נעל כלי במקום ובגודל הנוכחיים';
