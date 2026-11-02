@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { sortPortResults } from './port-results.js';
 
 const MAC_PATTERN = /^(?:[0-9a-f]{12}|(?:[0-9a-f]{2}[:-]){5}[0-9a-f]{2}|[0-9a-f]{4}(?:\.[0-9a-f]{4}){2})$/i;
 const NORMALIZE = (mac) => mac.replace(/[:-]|\./g, '').toUpperCase();
@@ -67,7 +68,7 @@ export function PortCheck() {
       const res = await fetch('/api/port-check', { method:'POST', headers:{ 'content-type':'application/json' }, body:JSON.stringify({ ip, ports }) });
       const data = await readApiJson(res);
       if (!res.ok) throw new Error(data.error || 'Port check failed');
-      setRows(data.results);
+      setRows(sortPortResults(data.results));
     } catch (e) { setError(e.message); setRows([]); } finally { setBusy(false); }
   }
   return <section className="card network-card">
