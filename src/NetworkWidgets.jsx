@@ -14,6 +14,21 @@ function exportResults(results) {
   const a = document.createElement('a'); a.href = url; a.download = 'mac-results.csv'; a.click();
   URL.revokeObjectURL(url);
 }
+async function readApiJson(response) {
+  const body = await response.text();
+  let data;
+  try { data = body.trim() ? JSON.parse(body) : null; } catch { /* HTML and other non-JSON errors */ }
+  if (!response.ok || !data) {
+    const detail = data?.error || (response.status === 404
+      ? 'API endpoint missing (404). Confirm Vercel deployed the feature branch with Serverless Functions.'
+      : response.status === 405 ? 'API route exists but rejected the request (405).'
+      : response.status === 500 ? 'Server function failed (500). Check Vercel Runtime Logs.'
+      : response.status === 503 ? 'Backend is unavailable (503).'
+      : 'Backend returned ' + response.status + (body.trim() ? ' instead of valid JSON' : ' with an empty response'));
+    throw new Error(detail);
+  }
+  return data;
+}
 export function MacCheck() {
   const [input, setInput] = useState('');
   const [rows, setRows] = useState([]);
@@ -25,7 +40,7 @@ export function MacCheck() {
     setBusy(true); setError('');
     try {
       const response = await fetch('/api/mac-lookup', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ macs: candidates }) });
-      const data = await response.json();
+      const data = await readApiJson(response);
       if (!response.ok) throw new Error(data.error || 'MAC lookup failed');
       setRows(data.results);
     } catch (e) { setError(e.message); } finally { setBusy(false); }
@@ -50,7 +65,7 @@ export function PortCheck() {
     setBusy(true); setError('');
     try {
       const res = await fetch('/api/port-check', { method:'POST', headers:{ 'content-type':'application/json' }, body:JSON.stringify({ ip, ports }) });
-      const data = await res.json();
+      const data = await readApiJson(res);
       if (!res.ok) throw new Error(data.error || 'Port check failed');
       setRows(data.results);
     } catch (e) { setError(e.message); setRows([]); } finally { setBusy(false); }
