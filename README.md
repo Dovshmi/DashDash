@@ -103,7 +103,8 @@ tbh rumv kf,uc  →  אני רוצה לכתוב
 
 - One notebook widget with a horizontal tab bar; each tab displays its note title.
 - Selected note has editable **title**, **phone number**, and a full-width text editor.
-- Add, rename, switch and delete tabs; notes save automatically in browser storage.
+- Add, rename and switch tabs. Each tab has its own × close button, and the + button sits directly after the final tab (also in RTL). Closing the last tab creates a fresh blank tab.
+- Notes save automatically in browser storage; closing a tab with text or a phone number asks for confirmation.
 - Existing scratchpad text is copied into tabs on first use (legacy data is retained).
 
 ### Pocket-inspired utilities

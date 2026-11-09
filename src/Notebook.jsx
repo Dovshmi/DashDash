@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { normalizeNotebook } from './notebook-data.js';
+import { closeNotebookTab, normalizeNotebook } from './notebook-data.js';
 
 const STORAGE_KEY = 'work-tools:notebook-v1';
 const LEGACY_KEY = 'work-tools:notes';
@@ -48,13 +48,19 @@ export default function Notebook() {
     }));
   }
 
-  function deleteNote() {
-    if (notes.length <= 1 || !window.confirm('למחוק את הפתק הזה?')) return;
-    setNotebook((previous) => {
-      const remaining = previous.notes.filter((note) => note.id !== previous.activeId);
-      const previousIndex = previous.notes.findIndex((note) => note.id === previous.activeId);
-      return { notes: remaining, activeId: remaining[Math.max(0, previousIndex - 1)]?.id ?? remaining[0].id };
-    });
+  function closeNote(noteId) {
+    const note = notes.find((item) => item.id === noteId);
+    if (!note) return;
+    if ((note.text.trim() || note.phone.trim()) && !window.confirm('למחוק את הפתק הזה?')) return;
+    // The notebook always keeps one editable blank tab, even when the last tab closes.
+    const blankReplacement = {
+      id: 'note:' + crypto.randomUUID(),
+      title: 'פתק 1',
+      phone: '',
+      text: '',
+      createdAt: new Date().toISOString(),
+    };
+    setNotebook((previous) => closeNotebookTab(previous, noteId, blankReplacement));
   }
 
   return <section className="card notes-card notebook-card">
@@ -64,17 +70,29 @@ export default function Notebook() {
     </div>
     <div className="notebook-tab-bar">
       <div className="notebook-tabs" role="tablist" aria-label="כותרות פתקים">
-        {notes.map((note) => <button
+        {notes.map((note) => <div
           key={note.id}
-          type="button"
-          role="tab"
-          aria-selected={note.id === current.id}
           className={note.id === current.id ? 'notebook-tab active' : 'notebook-tab'}
-          onClick={() => selectNote(note.id)}
-          title={note.title || 'ללא כותרת'}
-        >{note.title.trim() || 'ללא כותרת'}</button>)}
+          role="presentation"
+        >
+          <button
+            type="button"
+            role="tab"
+            aria-selected={note.id === current.id}
+            className="notebook-tab-select"
+            onClick={() => selectNote(note.id)}
+            title={note.title || 'ללא כותרת'}
+          >{note.title.trim() || 'ללא כותרת'}</button>
+          <button
+            type="button"
+            className="notebook-tab-close"
+            onClick={() => closeNote(note.id)}
+            title="סגור פתק"
+            aria-label={`סגור פתק: ${note.title.trim() || 'ללא כותרת'}`}
+          >×</button>
+        </div>)}
+        <button type="button" className="notebook-add" onClick={addNote} title="פתק חדש" aria-label="הוסף פתק">＋</button>
       </div>
-      <button type="button" className="notebook-add" onClick={addNote} title="פתק חדש" aria-label="הוסף פתק">＋</button>
     </div>
     <div className="notebook-fields">
       <label>כותרת
@@ -88,7 +106,6 @@ export default function Notebook() {
       onChange={(event) => updateNote('text', event.target.value)} placeholder="כתוב כאן את הפתק שלך..." />
     <div className="notebook-footer">
       <span>נוצר: {new Date(current.createdAt).toLocaleString('he-IL')}</span>
-      <button type="button" onClick={deleteNote} disabled={notes.length <= 1} title="מחק את הפתק הנבחר">מחק פתק</button>
     </div>
   </section>;
 }

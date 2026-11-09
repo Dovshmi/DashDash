@@ -6,9 +6,13 @@
 .notebook-card .card-heading { flex: 0 0 auto; margin-bottom: 0; }
 .notebook-tab-bar { display: flex; align-items: stretch; gap: 6px; border-bottom: 1px solid #34445a; flex: 0 0 auto; min-width: 0; }
 .notebook-tabs { display: flex; align-items: end; overflow-x: auto; flex: 1; min-width: 0; gap: 3px; scrollbar-width: thin; }
-.notebook-tab { flex: 0 0 auto; max-width: 170px; min-width: 60px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 9px 12px; border-radius: 9px 9px 0 0; background: #17273c; color: #aebbd0; font-size: .83rem; }
+.notebook-tab { display: flex; align-items: stretch; flex: 0 0 auto; max-width: 190px; min-width: 72px; overflow: hidden; border-radius: 9px 9px 0 0; background: #17273c; color: #aebbd0; }
 .notebook-tab:hover { background: #263b56; }
 .notebook-tab.active { background: #283e5a; color: #f1f5f9; box-shadow: inset 0 -2px #38bdf8; }
+.notebook-tab-select { min-width: 0; flex: 1 1 auto; padding: 9px 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; background: transparent; color: inherit; text-align: start; font-size: .83rem; }
+.notebook-tab-close { flex: 0 0 26px; padding: 0 4px; background: transparent; color: #9fb0c6; font-size: 1.06rem; font-weight: 400; }
+.notebook-tab-close:hover { color: #fecdd3; background: rgba(251,113,133,.18); }
+.notebook-tab-select:focus-visible, .notebook-tab-close:focus-visible, .notebook-add:focus-visible { outline: 2px solid #38bdf8; outline-offset: -2px; }
 .notebook-add { flex: 0 0 33px; align-self: center; height: 30px; border-radius: 8px; background: #22354e; color: #bae6fd; font-size: 1.18rem; }
 .notebook-fields { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, .8fr); gap: 10px; flex: 0 0 auto; }
 .notebook-fields label, .pocket-widget-label { display: flex; flex-direction: column; gap: 5px; color: #9caec6; font-size: .79rem; }

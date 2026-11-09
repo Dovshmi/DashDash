@@ -451,7 +451,6 @@ export default function App() {
       </div>}
 
       {currentWidgetIds.includes('notes') && <div key="notes" className="dashboard-widget">
-        <button className="widget-remove" onClick={() => removeWidget('notes')} aria-label="הסתר פתקים" title="הסר כלי">×</button>
         <Notebook />
       </div>}
       {currentWidgetIds.filter((widgetId) => widgetId.split(':', 1)[0] === 'drawing').map((widgetId) => <div key={widgetId} className="dashboard-widget"><button className="widget-remove" onClick={() => removeWidget(widgetId)} aria-label="הסר כלי כתיבה וציור" title="הסר כלי">×</button><DrawingBoard widgetId={widgetId} /></div>)}

@@ -45,3 +45,19 @@ export function singleNotebookWidgets(ids) {
       return true;
     });
 }
+
+/** Close a particular tab while preserving the other notes and current selection. */
+export function closeNotebookTab(notebook, noteId, blankReplacement) {
+  const closedIndex = notebook.notes.findIndex((note) => note.id === noteId);
+  if (closedIndex === -1) return notebook;
+  const remaining = notebook.notes.filter((note) => note.id !== noteId);
+  if (remaining.length === 0) {
+    return { notes: [blankReplacement], activeId: blankReplacement.id };
+  }
+  return {
+    notes: remaining,
+    activeId: notebook.activeId === noteId
+      ? remaining[Math.min(closedIndex, remaining.length - 1)].id
+      : notebook.activeId,
+  };
+}

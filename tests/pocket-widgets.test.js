@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { normalizeNotebook, singleNotebookWidgets } from '../src/notebook-data.js';
+import { closeNotebookTab, normalizeNotebook, singleNotebookWidgets } from '../src/notebook-data.js';
 import { calculateIpv4Subnet } from '../src/subnet.js';
 
 describe('notebook migration', () => {
@@ -16,6 +16,34 @@ describe('notebook migration', () => {
   it('starts with one blank note and collapses duplicate old note widgets', () => {
     expect(normalizeNotebook(null, null).notes).toHaveLength(1);
     expect(singleNotebookWidgets(['timer', 'notes:extra', 'notes', 'drawing'])).toEqual(['timer', 'notes', 'drawing']);
+  });
+});
+
+describe('tab-specific close behavior', () => {
+  const notes = [
+    { id: 'first', title: 'A', text: 'one' },
+    { id: 'second', title: 'B', text: 'two' },
+    { id: 'third', title: 'C', text: 'three' },
+  ];
+  const blank = { id: 'new-empty', title: 'פתק 1', phone: '', text: '' };
+
+  it('removes only the tab whose × was clicked, not the currently selected tab', () => {
+    const result = closeNotebookTab({ notes, activeId: 'third' }, 'first', blank);
+    expect(result.notes.map((note) => note.id)).toEqual(['second', 'third']);
+    expect(result.activeId).toBe('third');
+  });
+  it('selects the nearest remaining tab when closing the active tab', () => {
+    const result = closeNotebookTab({ notes, activeId: 'second' }, 'second', blank);
+    expect(result.notes.map((note) => note.id)).toEqual(['first', 'third']);
+    expect(result.activeId).toBe('third');
+  });
+  it('keeps the notebook editable when its final tab closes', () => {
+    const result = closeNotebookTab({ notes: [notes[0]], activeId: 'first' }, 'first', blank);
+    expect(result).toEqual({ notes: [blank], activeId: 'new-empty' });
+  });
+  it('ignores stale tab identifiers instead of deleting another note', () => {
+    const current = { notes, activeId: 'second' };
+    expect(closeNotebookTab(current, 'missing', blank)).toBe(current);
   });
 });
 
