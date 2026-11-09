@@ -123,7 +123,7 @@ tbh rumv kf,uc  →  אני רוצה לכתוב
 ### Pocket-inspired utilities
 
 - **Subnet Calculator:** offline IPv4/CIDR network, broadcast, masks, wildcard, address range and usable-host counts.
-- **Commands Helper:** a private, browser-local CLI reference with search, edit, copy, JSON import and manual backup export. Commands are never executed or sent to a server.
+- **Commands Helper:** a private, browser-local CLI reference with search, Cisco/Fortinet/Check Point filtering, favorites, edit, copy, JSON import and manual backup export. Supports validated `{{IP}}` and `{{VLAN}}` placeholders filled before copying; never executes commands. Commands are never executed or sent to a server.
 - Both utilities are available from **＋ הוספה** on existing dashboards; they appear by default on fresh desktop layouts.
 
 ### Drawing Board

@@ -56,3 +56,27 @@
 .notebook-footer-actions button { white-space: nowrap; color:#a8c8dc; padding:3px 7px; }
 .notebook-footer-actions button[aria-pressed='true'] { color:#facc15; }
 .notebook-footer-actions .notebook-undo { color:#86efac; }
+
+.commands-filters { display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:.75rem; color:#b8c6d8; }
+.commands-filters select, .command-category-select { border:1px solid #314761; border-radius:7px; background:#17273c; color:#e2e8f0; padding:6px 8px; font-size:.78rem; min-width:0; }
+.commands-filters label { display:flex; align-items:center; gap:4px; }
+.command-list-row { display:flex; gap:3px; }
+.command-list-row .command-list-item { flex:1 1 auto; min-width:0; }
+.command-favorite { width:33px; flex:0 0 33px; background:#17273c; border-radius:7px; color:#facc15; }
+.command-favorite[aria-pressed='true'] { background:#263b56; }
+.command-template-fields { display:grid; gap:6px; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); }
+.command-template-fields label { font-size:.76rem; color:#a8b8ce; display:grid; gap:4px; }
+.command-template-fields p { grid-column:1/-1; }
+.shortcuts-card .shortcut-list { display:grid; gap:7px; overflow-y:auto; max-height:220px; }
+.shortcut-item { display:flex; gap:5px; align-items:stretch; border-radius:9px; background:#112137; padding:5px; }
+.shortcut-open { display:flex; flex-direction:column; gap:2px; min-width:0; flex:1; align-items:stretch; text-align:right; background:transparent; color:#e2e8f0; padding:6px 8px; }
+.shortcut-open:hover { color:#7dd3fc; }
+.shortcut-open small { color:#93a8c2; font-weight:400; overflow:hidden; text-overflow:ellipsis; text-align:left; white-space:nowrap; font-size:.7rem; }
+.shortcut-icon-button { background:#203149; color:#a8b8ce; border-radius:6px; width:29px; flex:0 0 29px; }
+.shortcut-icon-button:hover { color:#fff; background:#314761; }
+.shortcut-form { display:grid; gap:7px; }
+.shortcut-form input { width:100%; min-width:0; background:#0b1627; color:#e2e8f0; border:1px solid #30425b; padding:9px 10px; border-radius:8px; }
+.backup-menu { left:auto; right:0; width:min(290px, 85vw); }
+.backup-import { cursor:pointer; display:block; padding:10px; border-radius:8px; color:#e2e8f0; font-size:.85rem; font-weight:700; }
+.backup-import:hover { background:#203149; }
+.backup-import input { display:block; max-width:100%; margin-top:8px; font-size:.75rem; color:#a8b8ce; }
