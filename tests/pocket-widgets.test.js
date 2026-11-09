@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { closeNotebookTab, normalizeNotebook, singleNotebookWidgets } from '../src/notebook-data.js';
+import { closeNotebookTab, duplicateNotebookTab, normalizeNotebook, restoreClosedNotebookTab, singleNotebookWidgets, sortNotebookTabs } from '../src/notebook-data.js';
 import { calculateIpv4Subnet } from '../src/subnet.js';
 
 describe('notebook migration', () => {
@@ -44,6 +44,32 @@ describe('tab-specific close behavior', () => {
   it('ignores stale tab identifiers instead of deleting another note', () => {
     const current = { notes, activeId: 'second' };
     expect(closeNotebookTab(current, 'missing', blank)).toBe(current);
+  });
+});
+
+describe('additional notebook actions', () => {
+  const notes = [
+    { id:'one', title:'One', phone:'050', text:'hello', pinned:false },
+    { id:'two', title:'Two', phone:'', text:'world', pinned:true },
+  ];
+  it('pins tabs to the start without changing their saved order', () => {
+    expect(sortNotebookTabs(notes).map((n) => n.id)).toEqual(['two', 'one']);
+    expect(notes[0].id).toBe('one');
+  });
+  it('duplicates notes without sharing their IDs', () => {
+    const copy = duplicateNotebookTab({notes,activeId:'one'},'one','duplicate','2026-11-09');
+    expect(copy.notes.map(n=>n.id)).toEqual(['one','duplicate','two']);
+    expect(copy.notes[1]).toMatchObject({text:'hello',phone:'050',pinned:false,title:'One (עותק)'});
+  });
+  it('undoes closing the last tab without leaving an unused blank', () => {
+    const original = {notes:[notes[0]],activeId:'one'};
+    const blank = {id:'blank',title:'פתק 1',text:'',phone:''};
+    const closed = closeNotebookTab(original,'one',blank);
+    expect(restoreClosedNotebookTab(closed,{note:notes[0],index:0,blankId:'blank'})).toEqual(original);
+  });
+  it('keeps pin flag when reloading stored notebook', () => {
+    const saved = {notes,activeId:'two'};
+    expect(normalizeNotebook(saved,null).notes[1].pinned).toBe(true);
   });
 });
 

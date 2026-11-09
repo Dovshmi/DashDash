@@ -50,3 +50,9 @@
   .command-fields { grid-template-columns: minmax(0, 1fr); }
   .dashboard-widget > .notebook-card { padding: 13px; gap: 7px; }
 }
+
+.notebook-footer { flex-wrap: wrap; }
+.notebook-footer-actions { display:flex; flex-wrap:wrap; gap:3px; justify-content:flex-end; }
+.notebook-footer-actions button { white-space: nowrap; color:#a8c8dc; padding:3px 7px; }
+.notebook-footer-actions button[aria-pressed='true'] { color:#facc15; }
+.notebook-footer-actions .notebook-undo { color:#86efac; }

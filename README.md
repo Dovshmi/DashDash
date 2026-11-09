@@ -105,6 +105,7 @@ tbh rumv kf,uc  →  אני רוצה לכתוב
 - Selected note has editable **title**, **phone number**, and a full-width text editor.
 - Add, rename and switch tabs. Each tab has its own × close button, and the + button sits directly after the final tab (also in RTL). Closing the last tab creates a fresh blank tab.
 - Notes save automatically in browser storage; closing a tab with text or a phone number asks for confirmation.
+- Pin notes to the front of the tab row, duplicate the selected note, copy a phone number, undo the most recent tab closure, and use Ctrl+N while focused inside Notes.
 - Existing scratchpad text is copied into tabs on first use (legacy data is retained).
 
 ### Backup, restore and shortcuts

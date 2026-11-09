@@ -7,6 +7,7 @@ export function normalizeNotebook(saved, legacy, now = new Date().toISOString())
         phone: typeof note.phone === 'string' ? note.phone : '',
         text: note.text,
         createdAt: typeof note.createdAt === 'string' ? note.createdAt : now,
+        pinned: note.pinned === true,
       }))
     : [];
   if (savedNotes.length) {
@@ -60,4 +61,29 @@ export function closeNotebookTab(notebook, noteId, blankReplacement) {
       ? remaining[Math.min(closedIndex, remaining.length - 1)].id
       : notebook.activeId,
   };
+}
+
+export function sortNotebookTabs(notes) {
+  return [...notes].sort((a, b) => Number(b.pinned === true) - Number(a.pinned === true));
+}
+export function duplicateNotebookTab(notebook, noteId, newId, now) {
+  const index = notebook.notes.findIndex((note) => note.id === noteId);
+  if (index < 0) return notebook;
+  const original = notebook.notes[index];
+  const duplicate = {
+    ...original, id: newId, title: original.title + ' (עותק)',
+    pinned: false, createdAt: now,
+  };
+  const notes = [...notebook.notes];
+  notes.splice(index + 1, 0, duplicate);
+  return { notes, activeId: duplicate.id };
+}
+export function restoreClosedNotebookTab(notebook, deleted) {
+  if (!deleted?.note || notebook.notes.some((note) => note.id === deleted.note.id)) return notebook;
+  const notes = [...notebook.notes];
+  // Closing the very last tab creates a blank tab; undo removes it if untouched.
+  if (deleted.blankId && notes.length === 1 && notes[0].id === deleted.blankId
+      && !notes[0].text && !notes[0].phone && notes[0].title === 'פתק 1') notes.length = 0;
+  notes.splice(Math.min(Math.max(0, deleted.index), notes.length), 0, deleted.note);
+  return { notes, activeId: deleted.note.id };
 }
