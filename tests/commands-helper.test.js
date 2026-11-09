@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { commandTemplateFields, fillCommandTemplate, normalizeCommandCategory } from '../src/command-utils.js';
+import { commandTemplateFields, fillCommandTemplate, inferCommandFamily, normalizeCommandCategory } from '../src/command-utils.js';
 
 describe('CLI templates',()=>{
   it('detects known placeholders once',()=>{
@@ -13,6 +13,12 @@ describe('CLI templates',()=>{
     expect(()=>fillCommandTemplate('ping {{IP}}',{IP:'not-an-ip'})).toThrow();
     expect(()=>fillCommandTemplate('vlan {{VLAN}}',{VLAN:'5000'})).toThrow();
     expect(()=>fillCommandTemplate('show {{SECRET}}',{})).toThrow();
+  });
+  it('recognizes device families from Pocket command library machine labels',()=>{
+    expect(inferCommandFamily('Fortigate','Interfaces')).toBe('Fortinet');
+    expect(inferCommandFamily('CheckPoint','Routing')).toBe('Check Point');
+    expect(inferCommandFamily('Cisco','Diagnostics')).toBe('Cisco');
+    expect(inferCommandFamily('Nokia 7210','Routing')).toBe('Other');
   });
   it('keeps category grouping limited to known families',()=>{
     expect(normalizeCommandCategory('Fortinet')).toBe('Fortinet');

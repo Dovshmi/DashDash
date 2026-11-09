@@ -2,6 +2,14 @@ export const COMMAND_CATEGORIES = ['Cisco', 'Fortinet', 'Check Point', 'Other'];
 export function normalizeCommandCategory(value) {
   return COMMAND_CATEGORIES.includes(value) ? value : 'Other';
 }
+export function inferCommandFamily(machine, category) {
+  if (COMMAND_CATEGORIES.includes(category)) return category;
+  const value = String(machine ?? '').toLowerCase();
+  if (value.includes('forti')) return 'Fortinet';
+  if (value.includes('checkpoint') || value.includes('check point')) return 'Check Point';
+  if (value.includes('cisco')) return 'Cisco';
+  return 'Other';
+}
 export function commandTemplateFields(command) {
   return [...new Set([...String(command).matchAll(/\{\{([A-Z_]+)\}\}/g)].map((match) => match[1]))];
 }

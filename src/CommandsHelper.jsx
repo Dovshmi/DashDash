@@ -1,14 +1,16 @@
 import { useEffect, useState } from 'react';
-import { COMMAND_CATEGORIES, commandTemplateFields, fillCommandTemplate, normalizeCommandCategory } from './command-utils.js';
+import { COMMAND_CATEGORIES, commandTemplateFields, fillCommandTemplate, inferCommandFamily } from './command-utils.js';
 
 const STORAGE_KEY = 'work-tools:commands-v1';
-const empty = { machine:'', description:'', command:'', category:'Cisco', favorite:false };
+const empty = { machine:'', description:'', command:'', category:'Cisco', topic:'', favorite:false };
 function sanitizeRow(row, id) {
   return {
     id, machine: typeof row.machine === 'string' ? row.machine.slice(0,100) : '',
     description: typeof row.description === 'string' ? row.description.slice(0,300) : '',
     command: typeof row.command === 'string' ? row.command.slice(0,10000) : '',
-    category: normalizeCommandCategory(row.category),
+    category: inferCommandFamily(row.machine,row.category),
+    topic: typeof row.topic === 'string' ? row.topic.slice(0,100)
+      : typeof row.category === 'string' && !COMMAND_CATEGORIES.includes(row.category) ? row.category.slice(0,100) : '',
     favorite: row.favorite === true,
   };
 }
@@ -21,7 +23,7 @@ function readCommands() {
 }
 function sanitizeImport(data) {
   const rows = Array.isArray(data) ? data : data?.commands;
-  if (!Array.isArray(rows) || rows.length > 500) throw new Error('בחר קובץ JSON עם עד 500 פקודות.');
+  if (!Array.isArray(rows) || rows.length > 1000) throw new Error('בחר קובץ JSON עם עד 1000 פקודות.');
   return rows.filter((row) => row && typeof row === 'object')
     .map((row) => sanitizeRow(row,'command:' + crypto.randomUUID()))
     .filter((row) => row.command.trim());
@@ -40,7 +42,7 @@ export default function CommandsHelper() {
   const filtered = entries.filter((entry) =>
     (category === 'All' || entry.category === category) &&
     (!favoritesOnly || entry.favorite) &&
-    (entry.machine + ' ' + entry.description + ' ' + entry.command).toLowerCase().includes(query.toLowerCase().trim()))
+    (entry.machine + ' ' + entry.category + ' ' + entry.topic + ' ' + entry.description + ' ' + entry.command).toLowerCase().includes(query.toLowerCase().trim()))
     .sort((a,b) => Number(b.favorite) - Number(a.favorite));
 
   useEffect(() => {
@@ -112,7 +114,7 @@ export default function CommandsHelper() {
       {filtered.length === 0 ? <p className="pocket-widget-hint">{entries.length ? 'אין תוצאות.' : 'הוסף פקודה או ייבא JSON.'}</p>
         : filtered.map((entry) => <div className="command-list-row" key={entry.id}>
           <button type="button" className={entry.id === selectedId ? 'command-list-item active' : 'command-list-item'}
-            onClick={() => select(entry.id)}><strong>{entry.description || 'ללא כותרת'}</strong><small>{entry.category} · {entry.machine || 'מכונה לא הוגדרה'}</small></button>
+            onClick={() => select(entry.id)}><strong>{entry.description || 'ללא כותרת'}</strong><small>{entry.category} · {entry.machine || 'מכונה לא הוגדרה'}{entry.topic ? ' · ' + entry.topic : ''}</small></button>
           <button type="button" className="command-favorite" onClick={() => setEntries((old)=>old.map((row)=>row.id===entry.id?{...row,favorite:!row.favorite}:row))}
             aria-label={entry.favorite ? 'הסר ממועדפים' : 'הוסף למועדפים'} aria-pressed={entry.favorite} title="מועדפים">{entry.favorite ? '★' : '☆'}</button>
         </div>)}
@@ -125,6 +127,7 @@ export default function CommandsHelper() {
       <select className="command-category-select" aria-label="קטגוריית הפקודה" value={selected.category} onChange={(e)=>edit('category',e.target.value)}>
         {COMMAND_CATEGORIES.map((item)=><option key={item} value={item}>{item}</option>)}
       </select>
+      <input value={selected.topic} onChange={(event) => edit('topic',event.target.value)} placeholder="נושא (למשל Routing / Interfaces)" aria-label="נושא פקודה" maxLength={100} />
       <textarea dir="ltr" spellCheck={false} value={selected.command} onChange={(event) => edit('command', event.target.value)}
         placeholder="CLI command... Use {{IP}} or {{VLAN}} for a template" aria-label="פקודת CLI" />
       {fields.length>0 && <div className="command-template-fields">
