@@ -3,6 +3,10 @@ import ReactGridLayout, { useContainerWidth } from 'react-grid-layout';
 import { verticalCompactor } from 'react-grid-layout/core';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
+import Notebook from './Notebook.jsx';
+import CommandsHelper from './CommandsHelper.jsx';
+import SubnetCalculator from './SubnetCalculator.jsx';
+import { singleNotebookWidgets } from './notebook-data.js';
 import { createDefaultDashboardLayout, formatAlertDuration, formatDuration, formatPersonalTotal, formatSessionDuration, keyboardTranslate, normalizeDashboardLayout, normalizeWidgetIds, removeHistoryItem, shouldSendPersonalTimeAlert, toDateKey } from './utils.js';
 
 const STORAGE = {
@@ -20,8 +24,10 @@ const BSMART_URL = 'https://smartest/';
 const WIDGETS = [
   { id: 'translate', name: 'Translate', description: 'תיקון שפת מקלדת' },
   { id: 'timer', name: 'זמן אישי', description: 'מדידת זמן והיסטוריה' },
-  { id: 'notes', name: 'דף קשקוש', description: 'פתקים מהירים', repeatable: true },
+  { id: 'notes', name: 'פתקים', description: 'מחברת עם לשוניות לפי כותרת' },
   { id: 'drawing', name: 'כתיבה וציור', description: 'לוח ציור', repeatable: true },
+  { id: 'subnet', name: 'Subnet Calculator', description: 'חישוב IPv4/CIDR מקומי' },
+  { id: 'commands', name: 'Commands Helper', description: 'ספריית פקודות מקומית להעתקה' },
 ];
 const WIDGET_IDS = WIDGETS.map((widget) => widget.id);
 const DASHBOARD_LAYOUT = [
@@ -29,6 +35,8 @@ const DASHBOARD_LAYOUT = [
   { i: 'translate', x: 6, y: 0, w: 6, h: 11, minW: 3, minH: 7 },
   { i: 'notes', x: 0, y: 11, w: 6, h: 14, minW: 4, minH: 6 },
   { i: 'drawing', x: 6, y: 11, w: 6, h: 14, minW: 5, minH: 10 },
+  { i: 'subnet', x: 0, y: 25, w: 6, h: 13, minW: 4, minH: 9 },
+  { i: 'commands', x: 6, y: 25, w: 6, h: 15, minW: 4, minH: 10 },
 ];
 
 const MOBILE_WIDGET_IDS = ['timer', 'notes', 'drawing'];
@@ -37,6 +45,8 @@ const MOBILE_DASHBOARD_LAYOUT = [
   { i: 'notes', x: 0, y: 11, w: 4, h: 14, minW: 1, minH: 6 },
   { i: 'drawing', x: 0, y: 25, w: 4, h: 14, minW: 1, minH: 10 },
   { i: 'translate', x: 0, y: 39, w: 4, h: 11, minW: 1, minH: 7 },
+  { i: 'subnet', x: 0, y: 50, w: 4, h: 13, minW: 1, minH: 9 },
+  { i: 'commands', x: 0, y: 63, w: 4, h: 15, minW: 1, minH: 10 },
 ];
 
 const DEFAULT_TIMER_PRESETS = [
@@ -171,10 +181,6 @@ function DrawingBoard({ widgetId }) {
 }
 
 export default function App() {
-  const [notesById, setNotesById] = useState(() => {
-    const savedNotes = load(STORAGE.notes, '');
-    return typeof savedNotes === 'string' ? { notes: savedNotes } : savedNotes && typeof savedNotes === 'object' ? savedNotes : {};
-  });
   const [sessions, setSessions] = useState(() => load(STORAGE.sessions, []));
   const [translations, setTranslations] = useState(() => load(STORAGE.translations, []));
   const [startedAt, setStartedAt] = useState(null);
@@ -188,8 +194,8 @@ export default function App() {
   const [showTranslationHistory, setShowTranslationHistory] = useState(false);
   const [showTimerHistory, setShowTimerHistory] = useState(false);
   const [showTimeAlertSettings, setShowTimeAlertSettings] = useState(false);
-  const [activeWidgetIds, setActiveWidgetIds] = useState(() => normalizeWidgetIds(load(STORAGE.widgets, null), WIDGET_IDS));
-  const [mobileWidgetIds, setMobileWidgetIds] = useState(() => normalizeWidgetIds(load(STORAGE.mobileWidgets, MOBILE_WIDGET_IDS), WIDGET_IDS));
+  const [activeWidgetIds, setActiveWidgetIds] = useState(() => singleNotebookWidgets(normalizeWidgetIds(load(STORAGE.widgets, null), WIDGET_IDS)));
+  const [mobileWidgetIds, setMobileWidgetIds] = useState(() => singleNotebookWidgets(normalizeWidgetIds(load(STORAGE.mobileWidgets, MOBILE_WIDGET_IDS), WIDGET_IDS)));
   const [showWidgetMenu, setShowWidgetMenu] = useState(false);
   const [layout, setLayout] = useState(() => normalizeDashboardLayout(load(STORAGE.layout, null), DASHBOARD_LAYOUT, activeWidgetIds));
   const [mobileLayout, setMobileLayout] = useState(() => normalizeDashboardLayout(load(STORAGE.mobileLayout, null), MOBILE_DASHBOARD_LAYOUT, mobileWidgetIds));
@@ -202,7 +208,6 @@ export default function App() {
   const timerPreset = runningPreset ?? selectedPreset;
   const timerThresholdSeconds = presetSeconds(timerPreset);
 
-  useEffect(() => { localStorage.setItem(STORAGE.notes, JSON.stringify(notesById)); }, [notesById]);
   useEffect(() => { localStorage.setItem(STORAGE.sessions, JSON.stringify(sessions)); }, [sessions]);
   useEffect(() => { localStorage.setItem(STORAGE.translations, JSON.stringify(translations)); }, [translations]);
   useEffect(() => { localStorage.setItem(STORAGE.layout, JSON.stringify(layout)); }, [layout]);
@@ -445,11 +450,19 @@ export default function App() {
       </aside>}
       </div>}
 
-      {currentWidgetIds.filter((widgetId) => widgetId.split(':', 1)[0] === 'notes').map((widgetId) => <div key={widgetId} className="dashboard-widget"><button className="widget-remove" onClick={() => removeWidget(widgetId)} aria-label="הסר כלי דף קשקוש" title="הסר כלי">×</button><section className="card notes-card">
-        <div className="card-heading drag-handle"><div><p className="eyebrow">NOTES</p><h2>דף קשקוש</h2></div><span className="save-note">נשמר אוטומטית</span></div>
-        <textarea aria-label="דף קשקוש לכתיבה" value={notesById[widgetId] ?? ''} onChange={(event) => setNotesById((current) => ({ ...current, [widgetId]: event.target.value }))} placeholder="כתוב כאן כל מה שצריך..." />
-      </section></div>)}
+      {currentWidgetIds.includes('notes') && <div key="notes" className="dashboard-widget">
+        <button className="widget-remove" onClick={() => removeWidget('notes')} aria-label="הסתר פתקים" title="הסר כלי">×</button>
+        <Notebook />
+      </div>}
       {currentWidgetIds.filter((widgetId) => widgetId.split(':', 1)[0] === 'drawing').map((widgetId) => <div key={widgetId} className="dashboard-widget"><button className="widget-remove" onClick={() => removeWidget(widgetId)} aria-label="הסר כלי כתיבה וציור" title="הסר כלי">×</button><DrawingBoard widgetId={widgetId} /></div>)}
+      {currentWidgetIds.includes('subnet') && <div key="subnet" className="dashboard-widget">
+        <button className="widget-remove" onClick={() => removeWidget('subnet')} aria-label="הסר מחשבון רשת" title="הסר כלי">×</button>
+        <SubnetCalculator />
+      </div>}
+      {currentWidgetIds.includes('commands') && <div key="commands" className="dashboard-widget">
+        <button className="widget-remove" onClick={() => removeWidget('commands')} aria-label="הסר עוזר פקודות" title="הסר כלי">×</button>
+        <CommandsHelper />
+      </div>}
       </ReactGridLayout>}
     </div>
     <footer>המידע נשמר מקומית בדפדפן הזה בלבד.</footer>

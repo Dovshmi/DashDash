@@ -58,7 +58,7 @@ The interface is written for Hebrew users with full RTL behavior, while technica
 - **Automatic vertical compaction** to reduce empty gaps.
 - **Independent desktop and mobile layouts** stored separately in the browser.
 - **Add and remove tools** directly from the dashboard.
-- **Repeatable widgets** for notes and drawing boards.
+- **Repeatable widgets** for drawing boards; notes now live in one tabbed notebook.
 - **Per-widget locking** that freezes the current position and size.
 - **Dashboard reset** for restoring the default layout.
 
@@ -99,12 +99,18 @@ Example:
 tbh rumv kf,uc  →  אני רוצה לכתוב
 ```
 
-### Notes
+### Notes — Notepad-style tabs
 
-- Quick browser-based scratchpad.
-- Automatic saving on every change.
-- Multiple independent note widgets can be added.
-- Each note instance keeps its own content.
+- One notebook widget with a horizontal tab bar; each tab displays its note title.
+- Selected note has editable **title**, **phone number**, and a full-width text editor.
+- Add, rename, switch and delete tabs; notes save automatically in browser storage.
+- Existing scratchpad text is copied into tabs on first use (legacy data is retained).
+
+### Pocket-inspired utilities
+
+- **Subnet Calculator:** offline IPv4/CIDR network, broadcast, masks, wildcard, address range and usable-host counts.
+- **Commands Helper:** a private, browser-local CLI reference with search, edit, copy, JSON import and manual backup export. Commands are never executed or sent to a server.
+- Both utilities are available from **＋ הוספה** on existing dashboards; they appear by default on fresh desktop layouts.
 
 ### Drawing Board
 

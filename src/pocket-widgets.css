@@ -1,0 +1,48 @@
+
+/* Small Pocket-style utilities within the existing DashDash draggable grid. */
+.dashboard-widget > .notebook-card,
+.dashboard-widget > .pocket-widget-card { height: 100%; min-height: 0; }
+.dashboard-widget > .notebook-card { overflow: hidden; display: flex; flex-direction: column; gap: 10px; }
+.notebook-card .card-heading { flex: 0 0 auto; margin-bottom: 0; }
+.notebook-tab-bar { display: flex; align-items: stretch; gap: 6px; border-bottom: 1px solid #34445a; flex: 0 0 auto; min-width: 0; }
+.notebook-tabs { display: flex; align-items: end; overflow-x: auto; flex: 1; min-width: 0; gap: 3px; scrollbar-width: thin; }
+.notebook-tab { flex: 0 0 auto; max-width: 170px; min-width: 60px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 9px 12px; border-radius: 9px 9px 0 0; background: #17273c; color: #aebbd0; font-size: .83rem; }
+.notebook-tab:hover { background: #263b56; }
+.notebook-tab.active { background: #283e5a; color: #f1f5f9; box-shadow: inset 0 -2px #38bdf8; }
+.notebook-add { flex: 0 0 33px; align-self: center; height: 30px; border-radius: 8px; background: #22354e; color: #bae6fd; font-size: 1.18rem; }
+.notebook-fields { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, .8fr); gap: 10px; flex: 0 0 auto; }
+.notebook-fields label, .pocket-widget-label { display: flex; flex-direction: column; gap: 5px; color: #9caec6; font-size: .79rem; }
+.notebook-fields input, .pocket-widget-label input, .commands-card input:not([type='file']) { width: 100%; min-width: 0; padding: 8px 10px; color: #e2e8f0; border-radius: 8px; outline: none; border: 1px solid #30425b; background: #0b1627; font-size: .88rem; }
+.notebook-fields input:focus, .pocket-widget-label input:focus, .commands-card input:focus { border-color: #38bdf8; }
+.notebook-card .notebook-editor { flex: 1 1 auto; min-height: 100px; resize: none; width: 100%; padding: 12px; }
+.notebook-footer { flex: 0 0 auto; display: flex; justify-content: space-between; align-items: center; color: #8495ae; font-size: .7rem; gap: 10px; }
+.notebook-footer button { color: #e6a6ac; background: transparent; font-size: .75rem; padding: 2px 7px; border-radius: 5px; }
+.notebook-footer button:disabled { opacity: .35; cursor: default; }
+.notebook-footer button:not(:disabled):hover { background: rgba(251,113,133,.1); }
+.pocket-widget-card { display: flex; flex-direction: column; gap: 12px; overflow-y: auto; }
+.pocket-widget-card .card-heading { margin-bottom: 0; flex: 0 0 auto; }
+.pocket-widget-hint { font-size: .74rem; color: #8da0b7; line-height: 1.55; }
+.pocket-widget-error { color: #fda4af; font-size: .86rem; }
+.subnet-results { display: grid; gap: 0; margin: 0; }
+.subnet-results > div { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px; padding: 9px 0; border-bottom: 1px solid rgba(148,163,184,.12); }
+.subnet-results dt { font-size: .78rem; color: #94a3b8; }
+.subnet-results dd { margin: 0; font-family: 'IBM Plex Mono', monospace; color: #e2e8f0; font-size: .8rem; text-align: left; overflow-wrap: anywhere; }
+.commands-actions { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.commands-actions button, .commands-import { display: inline-flex; align-items: center; justify-content: center; border: 1px solid #314761; color: #cbd5e1; border-radius: 7px; background: #203149; padding: 7px 10px; font-size: .76rem; font-weight: 600; cursor: pointer; }
+.commands-actions button:hover, .commands-import:hover { background: #2d4666; }
+.commands-actions button:disabled { opacity: .4; cursor: default; }
+.commands-import input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.commands-import:focus-within { outline: 2px solid #38bdf8; }
+.commands-list { display: flex; flex-direction: column; gap: 4px; overflow-y: auto; max-height: 130px; min-height: 48px; }
+.command-list-item { display: flex; flex-direction: column; gap: 2px; align-items: stretch; text-align: right; padding: 7px 10px; border-radius: 7px; color: #e2e8f0; background: #14243a; font-size: .8rem; }
+.command-list-item small { color: #8da0b7; font-weight: 400; }
+.command-list-item.active { background: #253f5f; box-shadow: inset -3px 0 #38bdf8; }
+.command-editor { display: flex; flex-direction: column; gap: 8px; min-height: 0; }
+.command-fields { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 7px; }
+.commands-card .command-editor textarea { min-height: 84px; max-height: 200px; padding: 10px; font-family: 'IBM Plex Mono', monospace; font-size: .81rem; resize: vertical; }
+@media (max-width: 500px) {
+  .notebook-fields { grid-template-columns: minmax(0, 1fr); gap: 7px; }
+  .notebook-card .notebook-editor { min-height: 75px; }
+  .command-fields { grid-template-columns: minmax(0, 1fr); }
+  .dashboard-widget > .notebook-card { padding: 13px; gap: 7px; }
+}
