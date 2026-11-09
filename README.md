@@ -107,6 +107,12 @@ tbh rumv kf,uc  →  אני רוצה לכתוב
 - Notes save automatically in browser storage; closing a tab with text or a phone number asks for confirmation.
 - Existing scratchpad text is copied into tabs on first use (legacy data is retained).
 
+### Backup, restore and shortcuts
+
+- **גיבוי ושחזור** in the toolbar exports a user-initiated JSON backup of local DashDash data (including notes, commands, shortcuts, drawing instances, timer history, layouts, and widget settings). Import validates the file and requires confirmation before replacing matching local keys. The original backup is never uploaded to a server.
+- **Quick Shortcuts** is a draggable widget for user-defined HTTP/HTTPS website links. Only explicit clicks open links, in a new tab. Browsers cannot directly launch arbitrary Windows programs or local folders as Pocket can.
+- Browser storage is per origin; production and test previews maintain separate copies. Backups are unencrypted and may include sensitive data.
+
 ### Network tools
 
 - **MAC Lookup:** resolves IEEE vendor prefixes with locally bundled IEEE data on the backend; can export CSV.

@@ -7,6 +7,8 @@ import Notebook from './Notebook.jsx';
 import { MacCheck, PortCheck } from './NetworkWidgets.jsx';
 import CommandsHelper from './CommandsHelper.jsx';
 import SubnetCalculator from './SubnetCalculator.jsx';
+import QuickShortcuts from './QuickShortcuts.jsx';
+import BackupControls from './BackupControls.jsx';
 import { singleNotebookWidgets } from './notebook-data.js';
 import { createDefaultDashboardLayout, formatAlertDuration, formatDuration, formatPersonalTotal, formatSessionDuration, keyboardTranslate, normalizeDashboardLayout, normalizeWidgetIds, removeHistoryItem, shouldSendPersonalTimeAlert, toDateKey } from './utils.js';
 
@@ -29,6 +31,7 @@ const WIDGETS = [
   { id: 'drawing', name: 'כתיבה וציור', description: 'לוח ציור', repeatable: true },
   { id: 'subnet', name: 'Subnet Calculator', description: 'חישוב IPv4/CIDR מקומי' },
   { id: 'commands', name: 'Commands Helper', description: 'ספריית פקודות מקומית להעתקה' },
+  { id: 'shortcuts', name: 'Quick Shortcuts', description: 'קיצורי דרך לאתרים' },
   { id: 'mac', name: 'MAC Lookup', description: 'בדיקת יצרן לפי IEEE' },
   { id: 'ports', name: 'Port Check', description: 'בדיקת פורטי TCP ציבוריים' },
 ];
@@ -42,6 +45,7 @@ const DASHBOARD_LAYOUT = [
   { i: 'commands', x: 6, y: 25, w: 6, h: 15, minW: 4, minH: 10 },
   { i: 'mac', x: 0, y: 40, w: 6, h: 12, minW: 4, minH: 8 },
   { i: 'ports', x: 6, y: 40, w: 6, h: 12, minW: 4, minH: 8 },
+  { i: 'shortcuts', x: 0, y: 52, w: 6, h: 12, minW: 4, minH: 8 },
 ];
 
 const MOBILE_WIDGET_IDS = ['timer', 'notes', 'drawing'];
@@ -54,6 +58,7 @@ const MOBILE_DASHBOARD_LAYOUT = [
   { i: 'commands', x: 0, y: 63, w: 4, h: 15, minW: 1, minH: 10 },
   { i: 'mac', x: 0, y: 78, w: 4, h: 12, minW: 1, minH: 8 },
   { i: 'ports', x: 0, y: 90, w: 4, h: 12, minW: 1, minH: 8 },
+  { i: 'shortcuts', x: 0, y: 102, w: 4, h: 12, minW: 1, minH: 8 },
 ];
 
 const DEFAULT_TIMER_PRESETS = [
@@ -379,6 +384,7 @@ export default function App() {
       <div className="topbar-actions">
         <span className="layout-hint">גרור כותרת · החלונות יסתדרו בלי חפיפה</span>
         <button className="layout-reset" onClick={resetDashboard}>איפוס חלונות</button>
+        <BackupControls />
         <div className="widget-add-control">
           <button className="widget-add" onClick={() => setShowWidgetMenu((visible) => !visible)} aria-expanded={showWidgetMenu}>＋ הוספה</button>
           {showWidgetMenu && <div className="widget-menu">
@@ -469,6 +475,7 @@ export default function App() {
         <button className="widget-remove" onClick={() => removeWidget('commands')} aria-label="הסר עוזר פקודות" title="הסר כלי">×</button>
         <CommandsHelper />
       </div>}
+      {currentWidgetIds.includes('shortcuts') && <div key="shortcuts" data-widget-id="shortcuts" className="dashboard-widget"><button className="widget-remove" onClick={() => removeWidget('shortcuts')} aria-label="הסר קיצורי דרך" title="הסר כלי">×</button><QuickShortcuts /></div>}
       {currentWidgetIds.includes('mac') && <div key="mac" data-widget-id="mac" className="dashboard-widget"><button className="widget-remove" onClick={() => removeWidget('mac')} aria-label="הסר בדיקת MAC" title="הסר כלי">×</button><MacCheck /></div>}
       {currentWidgetIds.includes('ports') && <div key="ports" data-widget-id="ports" className="dashboard-widget"><button className="widget-remove" onClick={() => removeWidget('ports')} aria-label="הסר בדיקת פורטים" title="הסר כלי">×</button><PortCheck /></div>}
       </ReactGridLayout>}
