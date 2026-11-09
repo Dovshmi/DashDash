@@ -4,6 +4,7 @@ import { verticalCompactor } from 'react-grid-layout/core';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 import Notebook from './Notebook.jsx';
+import { MacCheck, PortCheck } from './NetworkWidgets.jsx';
 import CommandsHelper from './CommandsHelper.jsx';
 import SubnetCalculator from './SubnetCalculator.jsx';
 import { singleNotebookWidgets } from './notebook-data.js';
@@ -28,6 +29,8 @@ const WIDGETS = [
   { id: 'drawing', name: 'כתיבה וציור', description: 'לוח ציור', repeatable: true },
   { id: 'subnet', name: 'Subnet Calculator', description: 'חישוב IPv4/CIDR מקומי' },
   { id: 'commands', name: 'Commands Helper', description: 'ספריית פקודות מקומית להעתקה' },
+  { id: 'mac', name: 'MAC Lookup', description: 'בדיקת יצרן לפי IEEE' },
+  { id: 'ports', name: 'Port Check', description: 'בדיקת פורטי TCP ציבוריים' },
 ];
 const WIDGET_IDS = WIDGETS.map((widget) => widget.id);
 const DASHBOARD_LAYOUT = [
@@ -37,6 +40,8 @@ const DASHBOARD_LAYOUT = [
   { i: 'drawing', x: 6, y: 11, w: 6, h: 14, minW: 5, minH: 10 },
   { i: 'subnet', x: 0, y: 25, w: 6, h: 13, minW: 4, minH: 9 },
   { i: 'commands', x: 6, y: 25, w: 6, h: 15, minW: 4, minH: 10 },
+  { i: 'mac', x: 0, y: 40, w: 6, h: 12, minW: 4, minH: 8 },
+  { i: 'ports', x: 6, y: 40, w: 6, h: 12, minW: 4, minH: 8 },
 ];
 
 const MOBILE_WIDGET_IDS = ['timer', 'notes', 'drawing'];
@@ -47,6 +52,8 @@ const MOBILE_DASHBOARD_LAYOUT = [
   { i: 'translate', x: 0, y: 39, w: 4, h: 11, minW: 1, minH: 7 },
   { i: 'subnet', x: 0, y: 50, w: 4, h: 13, minW: 1, minH: 9 },
   { i: 'commands', x: 0, y: 63, w: 4, h: 15, minW: 1, minH: 10 },
+  { i: 'mac', x: 0, y: 78, w: 4, h: 12, minW: 1, minH: 8 },
+  { i: 'ports', x: 0, y: 90, w: 4, h: 12, minW: 1, minH: 8 },
 ];
 
 const DEFAULT_TIMER_PRESETS = [
@@ -462,6 +469,8 @@ export default function App() {
         <button className="widget-remove" onClick={() => removeWidget('commands')} aria-label="הסר עוזר פקודות" title="הסר כלי">×</button>
         <CommandsHelper />
       </div>}
+      {currentWidgetIds.includes('mac') && <div key="mac" data-widget-id="mac" className="dashboard-widget"><button className="widget-remove" onClick={() => removeWidget('mac')} aria-label="הסר בדיקת MAC" title="הסר כלי">×</button><MacCheck /></div>}
+      {currentWidgetIds.includes('ports') && <div key="ports" data-widget-id="ports" className="dashboard-widget"><button className="widget-remove" onClick={() => removeWidget('ports')} aria-label="הסר בדיקת פורטים" title="הסר כלי">×</button><PortCheck /></div>}
       </ReactGridLayout>}
     </div>
     <footer>המידע נשמר מקומית בדפדפן הזה בלבד.</footer>

@@ -107,6 +107,12 @@ tbh rumv kf,uc  →  אני רוצה לכתוב
 - Notes save automatically in browser storage; closing a tab with text or a phone number asks for confirmation.
 - Existing scratchpad text is copied into tabs on first use (legacy data is retained).
 
+### Network tools
+
+- **MAC Lookup:** resolves IEEE vendor prefixes with locally bundled IEEE data on the backend; can export CSV.
+- **Port Check:** checks a maximum of 16 TCP ports per request from the Vercel server to a public IPv4 address; it does not scan the user’s private LAN.
+- Results keep reachable ports first and TIMEOUT/ERROR further down. No background scans run.
+
 ### Pocket-inspired utilities
 
 - **Subnet Calculator:** offline IPv4/CIDR network, broadcast, masks, wildcard, address range and usable-host counts.
