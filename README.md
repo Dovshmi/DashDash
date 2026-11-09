@@ -118,7 +118,9 @@ tbh rumv kf,uc  →  אני רוצה לכתוב
 
 - **MAC Lookup:** resolves IEEE vendor prefixes with locally bundled IEEE data on the backend; can export CSV.
 - **Port Check:** checks a maximum of 16 TCP ports per request from the Vercel server to a public IPv4 address; it does not scan the user’s private LAN.
-- Results keep reachable ports first and TIMEOUT/ERROR further down. No background scans run.
+- Results keep OPEN ports first, CLOSED next, and TIMEOUT/ERROR further down. No background scans run.
+- Recent and favorite targets can be reselected without scanning. Results can be copied and display common TCP service names; MAC results also export as CSV.
+- The port-check server still enforces public IPv4-only targets and at most 16 TCP ports per request.
 
 ### Pocket-inspired utilities
 

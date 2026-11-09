@@ -2,6 +2,7 @@
 const KEYS = new Set([
   'work-tools:notes', 'work-tools:notebook-v1', 'work-tools:commands-v1',
   'work-tools:shortcuts-v1', 'work-tools:network-targets-v1',
+  'work-tools:network-targets-ports-v1', 'work-tools:network-targets-mac-v1',
   'work-tools:personal-sessions', 'work-tools:translation-history',
   'work-tools:drawing', 'work-tools:dashboard-layout-v3',
   'work-tools:active-widgets-v1', 'work-tools:mobile-dashboard-layout-v2',

@@ -80,3 +80,14 @@
 .backup-import { cursor:pointer; display:block; padding:10px; border-radius:8px; color:#e2e8f0; font-size:.85rem; font-weight:700; }
 .backup-import:hover { background:#203149; }
 .backup-import input { display:block; max-width:100%; margin-top:8px; font-size:.75rem; color:#a8b8ce; }
+
+.network-targets { display:grid; gap:6px; }
+.network-targets > span { font-size:.7rem; color:#93a6bc; }
+.network-target-list { display:flex; flex-wrap:wrap; gap:5px; max-height:86px; overflow-y:auto; }
+.network-target { display:flex; min-width:0; background:#17273c; border:1px solid #30425b; border-radius:7px; overflow:hidden; }
+.network-target button { background:transparent; color:#d5e4f4; padding:5px 7px; font-size:.72rem; min-width:0; overflow:hidden; text-overflow:ellipsis; }
+.network-target button:first-child { max-width:160px; white-space:nowrap; }
+.network-target button:last-child { color:#facc15; border-inline-start:1px solid #30425b; }
+.network-target button:hover { background:#293b53; }
+.network-actions { flex-wrap:wrap; }
+.network-actions .secondary-button { padding:9px 11px; font-size:.75rem; }
