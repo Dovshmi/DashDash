@@ -11,7 +11,7 @@ describe('notebook migration', () => {
   });
   it('keeps saved notebook titles, phone numbers and the selected tab', () => {
     const saved = { notes: [{ id: 'a', title: 'לקוח', phone: '050-1234567', text: 'טקסט', createdAt: '2026-11-01' }], activeId: 'a' };
-    expect(normalizeNotebook(saved, null)).toEqual(saved);
+    expect(normalizeNotebook(saved, null)).toEqual({ ...saved, notes: [{ ...saved.notes[0], pinned: false }] });
   });
   it('starts with one blank note and collapses duplicate old note widgets', () => {
     expect(normalizeNotebook(null, null).notes).toHaveLength(1);
