@@ -2,15 +2,15 @@
 const KEYS = new Set([
   'work-tools:notes', 'work-tools:notebook-v1', 'work-tools:commands-v1',
   'work-tools:commands-v2', 'work-tools:commands-recent-v1',
-  'work-tools:shortcuts-v1', 'work-tools:network-targets-v1',
+  'work-tools:network-targets-v1',
   'work-tools:network-targets-ports-v1',
   'work-tools:personal-sessions', 'work-tools:translation-history',
   'work-tools:drawing', 'work-tools:dashboard-layout-v3',
   'work-tools:active-widgets-v1', 'work-tools:mobile-dashboard-layout-v2',
   'work-tools:mobile-active-widgets-v1', 'work-tools:time-alert-settings-v1',
 ]);
-// Older backups may contain MAC lookup history; silently skip that obsolete entry.
-const LEGACY_IGNORED_KEYS = new Set(['work-tools:network-targets-mac-v1']);
+// Old backups can contain retired MAC history and shortcuts; skip those entries.
+const LEGACY_IGNORED_KEYS = new Set(['work-tools:network-targets-mac-v1', 'work-tools:shortcuts-v1']);
 export const MAX_BACKUP_BYTES = 12_000_000;
 
 export function isBackupKey(key) {

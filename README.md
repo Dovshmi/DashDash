@@ -16,7 +16,7 @@
 </div>
 
 <div align="center">
-  <p><strong>A local-first, mobile-friendly, RTL workspace for personal timers, quick notes, drawing, clipboard correction, and reusable work shortcuts.</strong></p>
+  <p><strong>A local-first, mobile-friendly, RTL workspace for personal timers, quick notes, drawing, clipboard correction, and network troubleshooting utilities.</strong></p>
   <p>
     <a href="https://dashdash-tau.vercel.app"><strong>Live Application</strong></a>
     ·
@@ -108,15 +108,11 @@ tbh rumv kf,uc  →  אני רוצה לכתוב
 - Pin notes to the front of the tab row, duplicate the selected note, copy a phone number, undo the most recent tab closure, and use Ctrl+N while focused inside Notes.
 - Existing scratchpad text is copied into tabs on first use (legacy data is retained).
 
-### Backup, restore and shortcuts
+### Backup and restore
 
-- **גיבוי ושחזור** in the toolbar exports an explicit JSON backup of localStorage data (notes, commands, URL and manually entered path shortcuts, drawing instances, timer history, layouts and settings). Import validates the file and requires confirmation. Backups stay in the user's browser and can contain sensitive information.
-- **Quick Shortcuts** supports user-defined HTTPS/HTTP links, manually entered file or folder paths (copy-only), and Chrome/Edge File System Access shortcuts selected using **Choose File**, **Choose Folder**, or drag/drop from Explorer.
-- Browser-selected **file and directory handles are saved locally in IndexedDB**, not localStorage. Selecting an existing file shortcut opens a *read-only preview* for common text, configuration/source, image, and PDF files (512 KiB text limit; 12 MiB image/PDF limit). Selecting a saved directory shortcut lists up to 150 immediate entries; users can manually enter nested folders or preview files.
-- On reopening the installed PWA, the browser may ask for read permission again. No filesystem access is automatic, no files are uploaded, and no files, EXEs, or Windows Explorer windows are launched.
-- **Important:** Local filesystem handles/permissions are not included in JSON backups. After switching devices, profiles, or domains, select the file or folder again. Browser handles do not reveal absolute paths; copying a selected file/folder handle copies its **name** only, whereas manually entered absolute paths can be copied in full.
-- This requires Chromium-style desktop File System Access APIs (showOpenFilePicker and showDirectoryPicker); unsupported browsers retain URL and copy-only path functionality. The browser origin must be secure (HTTPS or localhost).
-- Browser storage is per origin; production and test previews maintain separate databases. Backups are unencrypted and can contain sensitive data.
+- **גיבוי ושחזור** exports a user-initiated JSON backup of local DashDash data (notes, commands, drawing instances, timer history, layouts and widget settings). Import validates the file and asks for confirmation before replacing stored entries. Backups are not uploaded to a server and may contain sensitive information.
+- The retired Quick Shortcuts widget (including file/folder PWA shortcuts) has been removed. The app **does not automatically erase older shortcuts saved in the browser**, but ignores the old widget state and excludes shortcut records from new backups. Shortcut entries in older backup files are skipped on restore.
+- Browser data is scoped to its site origin and profile; production and test previews use separate local storage.
 
 
 ### Network tools

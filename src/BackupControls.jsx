@@ -39,7 +39,7 @@ export default function BackupControls() {
   return <div className="widget-add-control">
     <button type="button" className="widget-add" onClick={() => setOpen((visible) => !visible)} aria-expanded={open}>גיבוי ושחזור</button>
     {open && <div className="widget-menu backup-menu">
-      <p>גיבוי מקומי לפתקים, פקודות, קישורים ונתיבים ידניים, חלונות והגדרות. הפניות והרשאות לקבצים ותיקיות שנבחרו בדפדפן נשמרות ב־IndexedDB ואינן נכללות בגיבוי JSON; יש לבחור אותן מחדש במכשיר אחר. הקובץ עשוי להכיל מידע רגיש.</p>
+      <p>גיבוי מקומי לפתקים, פקודות, חלונות והגדרות. קיצורי דרך מהגרסאות הקודמות לא נכללים בגיבוי החדש. הקובץ עשוי להכיל מידע רגיש.</p>
       <button type="button" onClick={backup}><strong>ייצא גיבוי JSON</strong><small>הורדה ידנית למחשב</small></button>
       <label className="backup-import">ייבוא גיבוי JSON<input type="file" accept=".json,application/json" onChange={restore} /></label>
       {status && <p role="status">{status}</p>}
