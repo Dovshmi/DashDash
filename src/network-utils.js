@@ -18,3 +18,11 @@ export function toggleNetworkFavorite(items,value){
   return items.map((item)=>item.value===value?{...item,favorite:!item.favorite}:item);
 }
 export function sortNetworkTargets(items){return [...items].sort((a,b)=>Number(b.favorite)-Number(a.favorite));}
+
+// Migrate old scan history: only manually starred/saved addresses remain.
+export function readSavedPortTargets(value) {
+  return readNetworkTargets(value).filter((item) => item.favorite);
+}
+export function removeSavedPortTarget(items, target) {
+  return items.filter((item) => item.value !== target);
+}

@@ -1,19 +1,21 @@
 import { describe, expect, it } from 'vitest';
-import { portServiceLabel, readNetworkTargets, rememberNetworkTarget, sortNetworkTargets, toggleNetworkFavorite } from '../src/network-utils.js';
+import { portServiceLabel, readNetworkTargets, readSavedPortTargets, rememberNetworkTarget, removeSavedPortTarget } from '../src/network-utils.js';
 
 describe('saved network targets',()=>{
-  it('records checked targets without duplicates and updates recency',()=>{
-    let rows=rememberNetworkTarget([],'8.8.8.8');
-    rows=rememberNetworkTarget(rows,'1.1.1.1');
-    rows=rememberNetworkTarget(rows,'8.8.8.8');
-    expect(rows.map((item)=>item.value)).toEqual(['8.8.8.8','1.1.1.1']);
+  it('does not expose targets saved automatically by older port scans',()=>{
+    const legacy = [{value:'8.8.8.8',favorite:false},{value:'1.1.1.1',favorite:true}];
+    expect(readSavedPortTargets(legacy)).toEqual([{value:'1.1.1.1',favorite:true}]);
   });
-  it('preserves favorites and allows starring past targets',()=>{
-    let rows=rememberNetworkTarget([],'8.8.8.8',true);
-    rows=rememberNetworkTarget(rows,'1.1.1.1');
-    rows=toggleNetworkFavorite(rows,'1.1.1.1');
-    expect(sortNetworkTargets(rows).every((item)=>item.favorite)).toBe(true);
-    expect(rememberNetworkTarget(rows,'8.8.8.8')[0].favorite).toBe(true);
+  it('only keeps targets deliberately saved with the save action',()=>{
+    let rows = readSavedPortTargets([]);
+    expect(rows).toEqual([]);
+    rows = rememberNetworkTarget(rows, '8.8.8.8', true);
+    rows = rememberNetworkTarget(rows, '1.1.1.1', true);
+    rows = rememberNetworkTarget(rows, '8.8.8.8', true);
+    expect(rows.map((item)=>item.value)).toEqual(['8.8.8.8','1.1.1.1']);
+    expect(rows.every((item)=>item.favorite)).toBe(true);
+    expect(readSavedPortTargets(JSON.parse(JSON.stringify(rows)))).toEqual(rows);
+    expect(removeSavedPortTarget(rows, '8.8.8.8').map((item)=>item.value)).toEqual(['1.1.1.1']);
   });
   it('drops invalid stored entries',()=>{
     expect(readNetworkTargets([{value:'8.8.8.8',favorite:true},null,{}, {value:'x'.repeat(200)}])).toEqual([{value:'8.8.8.8',favorite:true}]);

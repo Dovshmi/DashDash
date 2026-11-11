@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { sortPortResults } from './port-results.js';
 import { extractMacAddresses, normalizeMac } from './mac-utils.js';
-import { portServiceLabel, readNetworkTargets, rememberNetworkTarget, sortNetworkTargets, toggleNetworkFavorite } from './network-utils.js';
+import { portServiceLabel, readSavedPortTargets, rememberNetworkTarget, removeSavedPortTarget } from './network-utils.js';
 
 function exportResults(results) {
   const escape = (value) => '"' + String(value ?? '').replace(/"/g, '""').replace(/^[=+@-]/, "'$&") + '"';
@@ -26,27 +26,33 @@ async function readApiJson(response) {
   return data;
 }
 
-function useTargetHistory(kind) {
-  const key = 'work-tools:network-targets-' + kind + '-v1';
-  const [items,setItems] = useState(() => {
-    try {return readNetworkTargets(JSON.parse(localStorage.getItem(key) || '[]'));}
-    catch {return [];}
+const PORT_TARGETS_KEY = 'work-tools:network-targets-ports-v1';
+const LEGACY_MAC_HISTORY_KEY = 'work-tools:network-targets-mac-v1';
+
+function useSavedPortTargets() {
+  const [items, setItems] = useState(() => {
+    try { return readSavedPortTargets(JSON.parse(localStorage.getItem(PORT_TARGETS_KEY) || '[]')); }
+    catch { return []; }
   });
-  useEffect(() => {try {localStorage.setItem(key,JSON.stringify(items));} catch {/* storage optional */}},[key,items]);
+  useEffect(() => {
+    try { localStorage.setItem(PORT_TARGETS_KEY, JSON.stringify(items)); }
+    catch { /* Storage is optional */ }
+  }, [items]);
   return {
-    items: sortNetworkTargets(items),
-    remember: (target,favorite=false) => setItems((prev) => rememberNetworkTarget(prev,target,favorite)),
-    toggle: (target) => setItems((prev) => toggleNetworkFavorite(prev,target)),
+    items,
+    save: (target) => setItems((previous) => rememberNetworkTarget(previous, target, true)),
+    remove: (target) => setItems((previous) => removeSavedPortTarget(previous, target)),
   };
 }
-function TargetHistory({items,onSelect,onToggle}) {
+
+function SavedPortTargets({ items, onSelect, onRemove }) {
   if (!items.length) return null;
   return <div className="network-targets">
-    <span>יעדים אחרונים · בחירת יעד לא מפעילה בדיקה</span>
+    <span>יעדים שמורים · בחירת יעד לא מפעילה בדיקה</span>
     <div className="network-target-list">{items.map((target) => <div className="network-target" key={target.value}>
-      <button type="button" dir="ltr" title="בחר יעד" onClick={() => onSelect(target.value)}>{target.value}</button>
-      <button type="button" title={target.favorite ? 'הסר ממועדפים' : 'הוסף למועדפים'}
-        aria-label={target.favorite ? 'הסר יעד ממועדפים' : 'סמן יעד כמועדף'} onClick={() => onToggle(target.value)}>{target.favorite ? '★' : '☆'}</button>
+      <button type="button" dir="ltr" title="בחר יעד שמור" onClick={() => onSelect(target.value)}>{target.value}</button>
+      <button type="button" title="הסר יעד שמור"
+        aria-label={'הסר יעד שמור ' + target.value} onClick={() => onRemove(target.value)}>×</button>
     </div>)}</div>
   </div>;
 }
@@ -61,7 +67,11 @@ export function MacCheck() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [message,setMessage] = useState('');
-  const history = useTargetHistory('mac');
+  useEffect(() => {
+    // Older versions recorded MAC lookups. Remove that obsolete local data.
+    try { localStorage.removeItem(LEGACY_MAC_HISTORY_KEY); }
+    catch { /* Storage is optional */ }
+  }, []);
   async function check() {
     const candidates = extractMacAddresses(input);
     setRows([]); setMessage('');
@@ -73,14 +83,12 @@ export function MacCheck() {
       const data = await readApiJson(response);
       if (!response.ok) throw new Error(data.error || 'MAC lookup failed');
       setRows(Array.isArray(data.results) ? data.results.filter((row) => normalizeMac(row?.mac)) : []);
-      history.remember(candidates.join(', '));
     } catch (e) { setError(e.message); setRows([]); } finally { setBusy(false); }
   }
   return <section className="card network-card mac-check-card">
     <div className="card-heading drag-handle"><div><p className="eyebrow">IEEE OUI</p><h2>בדיקת כתובת MAC</h2></div></div>
     <p className="network-hint">זיהוי יצרן לפי מאגר IEEE. ניתן להדביק רשימות, לוגים או טקסט מעורב: רק כתובות MAC תקינות יוצגו. כתובות מקומיות ו־Multicast נתמכות.</p>
     <textarea dir="ltr" aria-label="MAC addresses" rows="3" placeholder={'00:1A:2B:3C:4D:5E\n0011.2233.4455'} value={input} onChange={(e) => setInput(e.target.value)} />
-    <TargetHistory items={history.items} onSelect={setInput} onToggle={history.toggle}/>
     <div className="network-actions"><button className="primary-button" disabled={busy} onClick={check}>{busy ? 'בודק...' : 'בדוק MAC'}</button>{rows.length > 0 && <><button className="secondary-button" onClick={() => copyRows(rows.map((x) => x.mac + ' | ' + x.vendor + ' | ' + x.registry).join('\n'),setMessage)}>העתק</button><button className="secondary-button" onClick={() => exportResults(rows)}>CSV</button></>}</div>
     {error && <p className="network-error" role="alert">{error}</p>}
     {message && <p className="network-hint" role="status">{message}</p>}
@@ -95,7 +103,7 @@ export function PortCheck() {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [message,setMessage] = useState('');
-  const history = useTargetHistory('ports');
+  const savedTargets = useSavedPortTargets();
   async function check() {
     setBusy(true); setError('');
     try {
@@ -103,15 +111,14 @@ export function PortCheck() {
       const data = await readApiJson(res);
       if (!res.ok) throw new Error(data.error || 'Port check failed');
       setRows(sortPortResults(data.results));
-      history.remember(ip.trim());
     } catch (e) { setError(e.message); setRows([]); } finally { setBusy(false); }
   }
   return <section className="card network-card port-check-card">
     <div className="card-heading drag-handle"><div><p className="eyebrow">TCP CONNECT</p><h2>בדיקת פורטים</h2></div></div>
     <p className="network-hint">סריקת TCP מהשרת של DashDash לכתובת IP ציבורית אחת בלבד. לא ניתן לבדוק כאן כתובות של הרשת המקומית.</p>
     <label className="network-label">כתובת IPv4 ציבורית<input dir="ltr" aria-label="Public IPv4 address" placeholder="8.8.8.8" value={ip} onChange={(e) => setIp(e.target.value)} /></label>
-    <TargetHistory items={history.items} onSelect={setIp} onToggle={history.toggle}/>
-    <div className="network-actions"><button type="button" className="secondary-button" onClick={() => history.remember(ip.trim(),true)} disabled={!ip.trim()} title="שמור יעד כמועדף">☆ שמור יעד</button></div>
+    <SavedPortTargets items={savedTargets.items} onSelect={setIp} onRemove={savedTargets.remove}/>
+    <div className="network-actions"><button type="button" className="secondary-button" onClick={() => savedTargets.save(ip.trim())} disabled={!ip.trim()} title="שמור כתובת באופן ידני">☆ שמור יעד</button></div>
     <label className="network-label">פורטים (פסיקים או טווחים)<input dir="ltr" aria-label="TCP ports" value={ports} onChange={(e) => setPorts(e.target.value)} /></label>
     <div className="network-actions"><button className="primary-button" disabled={busy} onClick={check}>{busy ? 'בודק...' : 'בדוק פורטים'}</button>{rows.length > 0 && <button type="button" className="secondary-button" onClick={() => copyRows(rows.map((x) => ip + ' | ' + x.port + ' | ' + portServiceLabel(x.port,x.service) + ' | ' + x.status + ' | ' + x.ms + ' ms').join('\n'),setMessage)}>העתק</button>}</div>
     {error && <p className="network-error" role="alert">{error}</p>}
