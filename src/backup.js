@@ -1,6 +1,7 @@
 // Local browser backup format. Never reads arbitrary keys or Vercel environment secrets.
 const KEYS = new Set([
   'work-tools:notes', 'work-tools:notebook-v1', 'work-tools:commands-v1',
+  'work-tools:commands-v2', 'work-tools:commands-recent-v1',
   'work-tools:shortcuts-v1', 'work-tools:network-targets-v1',
   'work-tools:network-targets-ports-v1',
   'work-tools:personal-sessions', 'work-tools:translation-history',

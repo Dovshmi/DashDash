@@ -106,3 +106,32 @@
 .subnet-split-table tr:last-child td { border-bottom: 0; }
 .subnet-split-table tr:nth-child(even) { background: rgba(148,163,184,.05); }
 .subnet-split-table-wrap:focus-visible { outline: 2px solid #38bdf8; outline-offset: 2px; }
+
+
+/* Command reference library: exact Pocket machine/category filters and opt-in templates. */
+.commands-card .commands-search { width:100%; min-width:0; padding:9px 11px; background:#0b1627; border:1px solid #30425b; border-radius:8px; color:#e2e8f0; }
+.commands-card .commands-search:focus { border-color:#38bdf8; outline:none; }
+.commands-card .commands-filters { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; }
+.commands-card .commands-filters select { min-width:0; width:100%; }
+.commands-card .commands-list { max-height:240px; min-height:85px; scrollbar-width:thin; }
+.commands-card .command-list-item { min-width:0; overflow-wrap:anywhere; }
+.commands-card .command-list-item strong { font-weight:600; }
+.commands-card .commands-results-count { color:#8da0b7; font-size:.73rem; }
+.commands-card .command-editor { border-top:1px solid rgba(148,163,184,.18); padding-top:10px; gap:9px; }
+.commands-card .command-editor label:not(.pocket-widget-label) { display:flex; flex-direction:column; gap:5px; min-width:0; color:#a8b8ce; font-size:.75rem; }
+.commands-card .command-editor input, .commands-card .command-editor select,
+.commands-card .command-editor textarea { min-width:0; width:100%; border:1px solid #30425b; background:#0b1627; color:#e2e8f0; border-radius:7px; padding:8px; }
+.commands-card .command-editor input:focus, .commands-card .command-editor textarea:focus,
+.commands-card .command-editor select:focus { outline:1px solid #38bdf8; }
+.commands-card .command-smart-editor, .commands-card .command-smart-fill { display:grid; gap:10px; padding:11px; background:#101f33; border:1px solid #2d4967; border-radius:9px; min-width:0; }
+.commands-card .command-template-config-row { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.4fr) minmax(90px,1fr); gap:6px; align-items:center; }
+.commands-card .command-template-config-row strong { color:#93c5fd; overflow-wrap:anywhere; font-size:.73rem; }
+.commands-card .command-template-choice { grid-column:1/-1; }
+.commands-card .command-template-fields { display:grid; grid-template-columns:repeat(auto-fit,minmax(145px,1fr)); }
+.commands-card .command-template-fields select { width:100%; }
+.commands-card .commands-actions button:focus-visible { outline:2px solid #38bdf8; }
+@media (max-width:600px) {
+  .commands-card .commands-filters { grid-template-columns:minmax(0,1fr) minmax(0,1fr); }
+  .commands-card .command-template-config-row { grid-template-columns:minmax(0,1fr) minmax(0,1fr); }
+  .commands-card .command-template-config-row strong { grid-column:1/-1; }
+}
