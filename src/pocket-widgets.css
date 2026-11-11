@@ -209,3 +209,26 @@
   padding-top: 8px;
   overflow-wrap: anywhere;
 }
+
+
+/* Shortcut kinds share the existing card; files and folders copy paths only. */
+.shortcuts-card .shortcut-form select {
+  width: 100%;
+  min-width: 0;
+  padding: 9px 10px;
+  color: #e2e8f0;
+  background: #0b1627;
+  border: 1px solid #30425b;
+  border-radius: 8px;
+}
+.shortcuts-card .shortcut-form select:focus-visible { outline: 2px solid #38bdf8; }
+.shortcuts-card .shortcut-kind {
+  display: inline-block;
+  color: #8faac2;
+  font-weight: 500;
+  font-size: .68rem;
+  margin-inline-start: 7px;
+}
+.shortcuts-card .shortcut-item { min-width: 0; }
+.shortcuts-card .shortcut-icon-button { flex-shrink: 0; }
+.shortcuts-card .shortcut-open strong { line-height: 1.45; overflow-wrap: anywhere; }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createDashBackup, isBackupKey, parseDashBackup, restoreDashBackup } from '../src/backup.js';
-import { normalizeShortcutUrl } from '../src/shortcuts-utils.js';
+import { normalizeShortcutUrl, normalizeShortcutPath, normalizeShortcutTarget, shortcutAction } from '../src/shortcuts-utils.js';
 
 function mockStorage() {
   const state = new Map();
@@ -56,5 +56,30 @@ describe('safe website shortcuts',()=>{
     for(const bad of ['javascript:alert(1)','file:///C:/secrets.txt','data:text/html,hello','https://admin:secret@example.com']){
       expect(()=>normalizeShortcutUrl(bad)).toThrow();
     }
+  });
+});
+
+
+describe('safe local shortcut targets for browser-only DashDash', () => {
+  it('preserves absolute Windows file and folder paths for copying', () => {
+    expect(normalizeShortcutPath('"C:\\Users\\Public\\Desktop\\report.xlsx"'))
+      .toBe('C:\\Users\\Public\\Desktop\\report.xlsx');
+    expect(normalizeShortcutTarget('folder', 'D:\\Work Projects\\Documentation'))
+      .toBe('D:\\Work Projects\\Documentation');
+    expect(normalizeShortcutTarget('folder', '\\\\server\\share\\Projects'))
+      .toBe('\\\\server\\share\\Projects');
+  });
+  it('allows Unix paths and rejects relative paths or URLs as local files', () => {
+    expect(normalizeShortcutTarget('file', '/home/user/report.txt')).toBe('/home/user/report.txt');
+    for (const path of ['report.xlsx','https://example.com','C:relative.txt','', 'C:\\Work\\bad\nfile']) {
+      expect(() => normalizeShortcutPath(path)).toThrow();
+    }
+  });
+  it('opens websites, but copies local file/folder references rather than launching them', () => {
+    expect(shortcutAction('url')).toBe('open');
+    expect(shortcutAction('file')).toBe('copy');
+    expect(shortcutAction('folder')).toBe('copy');
+    expect(() => normalizeShortcutTarget('url', 'file:///C:/Windows/system32/calc.exe')).toThrow();
+    expect(() => normalizeShortcutTarget('unknown', 'C:\\')).toThrow();
   });
 });
