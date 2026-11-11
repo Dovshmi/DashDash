@@ -160,3 +160,52 @@
 .commands-card .command-list-row { align-items: stretch; }
 .commands-card .command-smart-editor .commands-actions { margin: 1px 0; }
 .commands-card .command-smart-editor .commands-actions button:disabled { cursor: not-allowed; opacity: .5; }
+
+
+/* The command editor sits in a fixed-height draggable card. Prevent the
+   flex child from shrinking below its content; let the card scroll instead. */
+.commands-card { overflow-x: hidden; overflow-y: auto; }
+.commands-card .command-editor {
+  flex: 0 0 auto;
+  min-height: max-content;
+  overflow: visible;
+}
+.commands-card .command-smart-editor,
+.commands-card .command-smart-fill {
+  flex: 0 0 auto;
+  min-height: max-content;
+  height: auto;
+  align-content: start;
+  grid-auto-rows: max-content;
+  overflow: visible;
+}
+.commands-card .command-smart-editor > *,
+.commands-card .command-smart-fill > * { min-width: 0; }
+.commands-card .command-template-config-row { min-height: max-content; }
+.commands-card > .pocket-widget-hint,
+.commands-card > .commands-actions,
+.commands-card > .commands-filters { flex-shrink: 0; }
+.commands-card .command-template-help {
+  border: 1px solid #30425b;
+  border-radius: 7px;
+  padding: 7px 10px;
+}
+.commands-card .command-template-help summary {
+  cursor: pointer;
+  color: #9fb6ce;
+  font-size: .77rem;
+}
+.commands-card .command-template-help p {
+  padding: 8px 0 2px;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+.commands-card .command-template-count {
+  color: #91abc4;
+  font-size: .75rem;
+}
+.commands-card .command-template-feedback {
+  border-top: 1px solid #30425b;
+  padding-top: 8px;
+  overflow-wrap: anywhere;
+}

@@ -41,6 +41,49 @@ export function defaultTemplateFields(format, oldFields = []) {
     return field;
   });
 }
+// Turn a selection in the template editor into a descriptive, unique field.
+// Exact CLI values such as 1/10 or ieee-fwd-all remain readable as {{1/10}}
+// and {{ieee-fwd-all}}. A blank selection still creates a generic field.
+export function insertSelectedTemplateVariable(format, start, end) {
+  if (typeof format !== 'string' || !Number.isInteger(start) ||
+      !Number.isInteger(end) || start < 0 || end < start || end > format.length) {
+    throw new Error('מיקום הסימון בטמפלייט אינו תקין.');
+  }
+  const selected = format.slice(start, end).trim();
+  if (selected.includes('{{') || selected.includes('}}')) {
+    throw new Error('בחר טקסט רגיל ולא משתנה קיים כדי ליצור משתנה חדש.');
+  }
+  let base = selected && FIELD_NAME.test(selected) ? selected : '';
+  if (selected && !base) {
+    base = selected.normalize('NFKC')
+      .replace(/[^\p{L}\p{N}_./: -]+/gu, '_')
+      .replace(/^[^\p{L}\p{N}_]+/u, '')
+      .slice(0, 64).trim();
+    if (!FIELD_NAME.test(base)) base = '';
+  }
+  const withoutSelection = format.slice(0, start) + format.slice(end);
+  const used = new Set(templateFieldNames(withoutSelection));
+  if (!base) {
+    let suffix = 1;
+    while (used.has('FIELD_' + suffix)) suffix++;
+    base = 'FIELD_' + suffix;
+  }
+  let name = base;
+  let index = 2;
+  while (used.has(name)) {
+    const suffix = '_' + index++;
+    name = base.slice(0, 64 - suffix.length) + suffix;
+  }
+  const token = '{{' + name + '}}';
+  return {
+    format: format.slice(0, start) + token + format.slice(end),
+    name,
+    label: selected || name.replace(/_/g, ' '),
+    selected,
+    caret: start + token.length,
+  };
+}
+
 function uniqueHintName(text, used, allowReuse) {
   let base = String(text || '').toUpperCase().replace(/[^A-Z0-9_]+/g,'_').replace(/^_+|_+$/g,'').slice(0,25);
   if (!base || !/^[A-Z]/.test(base)) base = 'VALUE';

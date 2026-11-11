@@ -5,8 +5,8 @@ import {
   saveCommandLibrary, searchCommandLibrary, updateCommandRecent,
 } from './command-library.js';
 import {
-  TEMPLATE_FIELD_TYPES, defaultTemplateFields, renderSmartTemplate,
-  smartTemplateState, suggestSmartTemplate, templateFieldNames, validateSmartTemplate,
+  TEMPLATE_FIELD_TYPES, defaultTemplateFields, guessFieldType, insertSelectedTemplateVariable,
+  renderSmartTemplate, smartTemplateState, suggestSmartTemplate, validateSmartTemplate,
 } from './smart-command-templates.js';
 
 const INITIAL_MACHINE = 'All machines';
@@ -154,21 +154,30 @@ export default function CommandsHelper() {
   function insertTemplateVariable() {
     if (!templateDraft) return;
     const current = templateDraft.format;
-    const existing = new Set(templateFieldNames(current));
-    if (existing.size >= 12) {
-      setStatus('ניתן להגדיר עד 12 משתנים בטמפלייט אחד.');
-      return;
-    }
-    let number = 1;
-    while (existing.has('FIELD_' + number)) number++;
-    const name = 'FIELD_' + number;
     const editor = templateEditorRef.current;
     const start = Number.isInteger(editor?.selectionStart) ? editor.selectionStart : current.length;
     const end = Number.isInteger(editor?.selectionEnd) ? editor.selectionEnd : current.length;
-    const inserted = '{{' + name + '}}';
-    editTemplateFormat(current.slice(0, start) + inserted + current.slice(end));
-    setStatus('נוסף המשתנה ' + inserted + '. אפשר לשנות את שמו ואת סוגו.');
-    editor?.focus();
+    try {
+      const insertion = insertSelectedTemplateVariable(current, start, end);
+      const fields = defaultTemplateFields(insertion.format, templateDraft.fields).map((field) =>
+        field.name === insertion.name ? {
+          ...field,
+          label: insertion.label,
+          type: guessFieldType(insertion.label),
+        } : field
+      );
+      setTemplateDraft({ format: insertion.format, fields });
+      setStatus(insertion.selected
+        ? 'נוצר משתנה בשם {{' + insertion.name + '}} במקום הטקסט שסימנת: ' + insertion.selected
+        : 'נוסף {{' + insertion.name + '}}. אפשר לשנות את שמו ואת סוגו.');
+      window.requestAnimationFrame(() => {
+        const field = templateEditorRef.current;
+        if (field) {
+          field.focus();
+          field.setSelectionRange(insertion.caret, insertion.caret);
+        }
+      });
+    } catch (error) { setStatus(error.message); }
   }
   function editTemplateField(name, values) {
     setTemplateDraft((old) => ({
@@ -293,8 +302,11 @@ export default function CommandsHelper() {
         <p className="pocket-widget-hint">זוהו שדות אפשריים לטמפלייט. אפשר לאשר הצעה בלי לשנות את הפקודה המקורית.</p>}
       {templateOpen && templateDraft && <div className="command-smart-editor">
         <strong>הגדרת טמפלייט · אישור ידני בלבד</strong>
-        <p className="pocket-widget-hint">הפורמט להעתקה נפרד מהפקודה המקורית. אפשר להגדיר כמה משתנים שונים, למשל {"{{IP}}"}, {"{{SOURCE_IP}}"}, {"{{VLAN}}"} וגם {"{{1/11}}"}. כל משתנה מקבל שדה מילוי משלו.</p>
-        <p className="pocket-widget-hint">{templateDraft.fields.length} משתנים מזוהים · שמות שחוזרים כמה פעמים מקבלים שדה אחד משותף.</p>
+        <details className="command-template-help">
+          <summary>איך מסמנים טקסט והופכים אותו למשתנה?</summary>
+          <p className="pocket-widget-hint">סמן בתוך פורמט הטמפלייט את הערך שתרצה לשנות, למשל 1/10 או ieee-fwd-all, ולחץ על ״＋ הוסף משתנה במיקום הסמן״. שם המשתנה יהיה הטקסט שסימנת. אפשר גם לכתוב משתנים ישירות, למשל {"{{IP}}"} או {"{{VLAN}}"}.</p>
+        </details>
+        <p className="command-template-count">{templateDraft.fields.length} משתנים בטמפלייט · עד 12 משתנים</p>
         <label className="pocket-widget-label">פורמט הטמפלייט
           <textarea dir="ltr" spellCheck={false} value={templateDraft.format} maxLength={6000}
             ref={templateEditorRef} aria-label="פורמט הטמפלייט"
@@ -325,6 +337,7 @@ export default function CommandsHelper() {
           <button type="button" onClick={() => {setTemplateOpen(false);setTemplateDraft(null);}}>ביטול</button>
           {selected.template && <button type="button" onClick={removeTemplate}>הסר טמפלייט</button>}
         </div>
+        {status && <p className="pocket-widget-hint command-template-feedback" role="status">{status}</p>}
       </div>}
       {templateState === 'configured' && !templateOpen && <div className="command-smart-fill">
         <strong>מילוי טמפלייט מאושר</strong>
@@ -351,7 +364,7 @@ export default function CommandsHelper() {
         <p className="pocket-widget-hint">הערכים שאתה ממלא אינם נשמרים בספרייה.</p>
       </div>}
     </div>}
-    {status && <p className="pocket-widget-hint" role="status">{status}</p>}
-    <p className="pocket-widget-hint">המידע נשמר בדפדפן הזה בלבד; ניתן לייצא גיבוי JSON. הפקודות לעולם אינן מורצות.</p>
+    {!templateOpen && status && <p className="pocket-widget-hint" role="status">{status}</p>}
+    {!templateOpen && <p className="pocket-widget-hint">המידע נשמר בדפדפן הזה בלבד; ניתן לייצא גיבוי JSON. הפקודות לעולם אינן מורצות.</p>}
   </section>;
 }

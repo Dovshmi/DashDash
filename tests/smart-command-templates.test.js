@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  defaultTemplateFields, renderSmartTemplate, smartTemplateState, suggestSmartTemplate,
+  defaultTemplateFields, insertSelectedTemplateVariable, renderSmartTemplate, smartTemplateState, suggestSmartTemplate,
   templateFieldNames, validateSmartTemplate,
 } from '../src/smart-command-templates.js';
 
@@ -123,6 +123,48 @@ describe('Pocket smart CLI templates in DashDash', () => {
     const row=record('ping {{IP}}');
     row.template=validateSmartTemplate({format:'ping {{IP}}',fields:[{name:'IP',label:'IP',type:'ipv4'}]},row.command);
     expect(renderSmartTemplate(row,{IP:'10.0.0.1'})).toBe('ping 10.0.0.1');
+  });
+
+  it('names newly selected CLI parts after their original text, not FIELD numbers', () => {
+    const source = 'ethernet-service uni 1/10 uni-profile ieee-fwd-all';
+    const firstStart = source.indexOf('1/10');
+    const first = insertSelectedTemplateVariable(source, firstStart, firstStart + '1/10'.length);
+    expect(first).toMatchObject({
+      format: 'ethernet-service uni {{1/10}} uni-profile ieee-fwd-all',
+      name: '1/10', label: '1/10', selected: '1/10',
+    });
+    const secondStart = first.format.indexOf('ieee-fwd-all');
+    const second = insertSelectedTemplateVariable(
+      first.format, secondStart, secondStart + 'ieee-fwd-all'.length
+    );
+    expect(second.format).toBe('ethernet-service uni {{1/10}} uni-profile {{ieee-fwd-all}}');
+    expect(second.name).toBe('ieee-fwd-all');
+    const fields = defaultTemplateFields(second.format);
+    expect(fields.map((item) => item.name)).toEqual(['1/10', 'ieee-fwd-all']);
+    expect(fields.map((item) => item.type)).toEqual(['interface', 'text']);
+    const row = record(source);
+    row.template = validateSmartTemplate({format: second.format, fields}, source);
+    expect(renderSmartTemplate(row, {'1/10': '1/11', 'ieee-fwd-all': 'ieee-fwd-block'}))
+      .toBe('ethernet-service uni 1/11 uni-profile ieee-fwd-block');
+  });
+  it('creates distinct fields for repeated selections unless deliberately reused', () => {
+    const source = 'bind 1/10 to 1/10';
+    const a = insertSelectedTemplateVariable(source, source.indexOf('1/10'), source.indexOf('1/10') + 4);
+    const later = a.format.lastIndexOf('1/10');
+    const b = insertSelectedTemplateVariable(a.format, later, later + 4);
+    expect(b.format).toBe('bind {{1/10}} to {{1/10_2}}');
+    expect(defaultTemplateFields(b.format).map((item) => item.label)).toEqual(['1/10','1/10 2']);
+  });
+  it('retains the generic field fallback when no text is selected', () => {
+    const first = insertSelectedTemplateVariable('show port ', 10, 10);
+    expect(first).toMatchObject({name:'FIELD_1', selected:'', format:'show port {{FIELD_1}}'});
+    const second = insertSelectedTemplateVariable(first.format, first.format.length, first.format.length);
+    expect(second.name).toBe('FIELD_2');
+  });
+  it('prevents nested placeholders and rejects invalid selection positions', () => {
+    expect(() => insertSelectedTemplateVariable('show {{IP}}', 5, 11)).toThrow();
+    expect(() => insertSelectedTemplateVariable('show port', -1, 5)).toThrow();
+    expect(() => insertSelectedTemplateVariable('show port', 9, 22)).toThrow();
   });
 
 });
