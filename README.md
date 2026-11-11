@@ -58,7 +58,7 @@ The interface is written for Hebrew users with full RTL behavior, while technica
 - **Automatic vertical compaction** to reduce empty gaps.
 - **Independent desktop and mobile layouts** stored separately in the browser.
 - **Add and remove tools** directly from the dashboard.
-- **Repeatable widgets** for notes and drawing boards.
+- **Repeatable widgets** for drawing boards; notes now live in one tabbed notebook.
 - **Per-widget locking** that freezes the current position and size.
 - **Dashboard reset** for restoring the default layout.
 
@@ -99,12 +99,34 @@ Example:
 tbh rumv kf,uc  →  אני רוצה לכתוב
 ```
 
-### Notes
+### Notes — Notepad-style tabs
 
-- Quick browser-based scratchpad.
-- Automatic saving on every change.
-- Multiple independent note widgets can be added.
-- Each note instance keeps its own content.
+- One notebook widget with a horizontal tab bar; each tab displays its note title.
+- Selected note has editable **title**, **phone number**, and a full-width text editor.
+- Add, rename and switch tabs. Each tab has its own × close button, and the + button sits directly after the final tab (also in RTL). Closing the last tab creates a fresh blank tab.
+- Notes save automatically in browser storage; closing a tab with text or a phone number asks for confirmation.
+- Pin notes to the front of the tab row, duplicate the selected note, copy a phone number, undo the most recent tab closure, and use Ctrl+N while focused inside Notes.
+- Existing scratchpad text is copied into tabs on first use (legacy data is retained).
+
+### Backup, restore and shortcuts
+
+- **גיבוי ושחזור** in the toolbar exports a user-initiated JSON backup of local DashDash data (including notes, commands, shortcuts, drawing instances, timer history, layouts, and widget settings). Import validates the file and requires confirmation before replacing matching local keys. The original backup is never uploaded to a server.
+- **Quick Shortcuts** is a draggable widget for user-defined HTTP/HTTPS website links. Only explicit clicks open links, in a new tab. Browsers cannot directly launch arbitrary Windows programs or local folders as Pocket can.
+- Browser storage is per origin; production and test previews maintain separate copies. Backups are unencrypted and may include sensitive data.
+
+### Network tools
+
+- **MAC Lookup:** resolves IEEE vendor prefixes with locally bundled IEEE data on the backend; can export CSV.
+- **Port Check:** checks a maximum of 16 TCP ports per request from the Vercel server to a public IPv4 address; it does not scan the user’s private LAN.
+- Results keep OPEN ports first, CLOSED next, and TIMEOUT/ERROR further down. No background scans run.
+- Recent and favorite targets can be reselected without scanning. Results can be copied and display common TCP service names; MAC results also export as CSV.
+- The port-check server still enforces public IPv4-only targets and at most 16 TCP ports per request.
+
+### Pocket-inspired utilities
+
+- **Subnet Calculator:** offline IPv4/CIDR network, broadcast, masks, wildcard, address range and usable-host counts.
+- **Commands Helper:** a private, browser-local CLI reference with search, Cisco/Fortinet/Check Point filtering, favorites, edit, copy, JSON import (up to 1000 entries, including Pocket's `{ schema, commands, machines }` exports) and manual backup export. Imported machine and topic metadata is retained. Supports validated `{{IP}}` and `{{VLAN}}` placeholders filled before copying; never executes commands. Commands are never executed or sent to a server.
+- Both utilities are available from **＋ הוספה** on existing dashboards; they appear by default on fresh desktop layouts.
 
 ### Drawing Board
 

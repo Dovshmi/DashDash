@@ -37,7 +37,7 @@ describe('Pocket networking integrated with DashDash', () => {
     await macHandler({method:'POST',body:{macs:['0e:f6:5a:fb:7a:26','xyz']}},res);
     expect(res.code).toBe(200);
     expect(res.body.results[0]).toMatchObject({mac:'0E:F6:5A:FB:7A:26',vendor:'Locally administered / randomized',registry:'Special'});
-    expect(res.body.results[1]).toMatchObject({vendor:'Invalid MAC'});
+    expect(res.body.results).toHaveLength(1);
   });
   it('resolves a real IEEE manufacturer without downloading data at request time', async () => {
     const res = mockResponse();

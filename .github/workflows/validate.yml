@@ -1,7 +1,7 @@
 name: Validate DashDash
 on:
   push:
-    branches: [main, feature/pocket-network-tools]
+    branches: [main, test, feature/pocket-network-tools]
   pull_request:
     branches: [main]
 permissions:

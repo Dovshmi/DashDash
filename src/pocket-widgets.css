@@ -1,0 +1,211 @@
+
+/* Small Pocket-style utilities within the existing DashDash draggable grid. */
+.dashboard-widget > .notebook-card,
+.dashboard-widget > .pocket-widget-card { height: 100%; min-height: 0; }
+.dashboard-widget > .notebook-card { overflow: hidden; display: flex; flex-direction: column; gap: 10px; }
+.notebook-card .card-heading { flex: 0 0 auto; margin-bottom: 0; }
+.notebook-tab-bar { display: flex; align-items: stretch; gap: 6px; border-bottom: 1px solid #34445a; flex: 0 0 auto; min-width: 0; }
+.notebook-tabs { display: flex; align-items: end; overflow-x: auto; flex: 1; min-width: 0; gap: 3px; scrollbar-width: thin; }
+.notebook-tab { display: flex; align-items: stretch; flex: 0 0 auto; max-width: 190px; min-width: 72px; overflow: hidden; border-radius: 9px 9px 0 0; background: #17273c; color: #aebbd0; }
+.notebook-tab:hover { background: #263b56; }
+.notebook-tab.active { background: #283e5a; color: #f1f5f9; box-shadow: inset 0 -2px #38bdf8; }
+.notebook-tab-select { min-width: 0; flex: 1 1 auto; padding: 9px 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; background: transparent; color: inherit; text-align: start; font-size: .83rem; }
+.notebook-tab-close { flex: 0 0 26px; padding: 0 4px; background: transparent; color: #9fb0c6; font-size: 1.06rem; font-weight: 400; }
+.notebook-tab-close:hover { color: #fecdd3; background: rgba(251,113,133,.18); }
+.notebook-tab-select:focus-visible, .notebook-tab-close:focus-visible, .notebook-add:focus-visible { outline: 2px solid #38bdf8; outline-offset: -2px; }
+.notebook-add { flex: 0 0 33px; align-self: center; height: 30px; border-radius: 8px; background: #22354e; color: #bae6fd; font-size: 1.18rem; }
+.notebook-fields { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, .8fr); gap: 10px; flex: 0 0 auto; }
+.notebook-fields label, .pocket-widget-label { display: flex; flex-direction: column; gap: 5px; color: #9caec6; font-size: .79rem; }
+.notebook-fields input, .pocket-widget-label input, .commands-card input:not([type='file']) { width: 100%; min-width: 0; padding: 8px 10px; color: #e2e8f0; border-radius: 8px; outline: none; border: 1px solid #30425b; background: #0b1627; font-size: .88rem; }
+.notebook-fields input:focus, .pocket-widget-label input:focus, .commands-card input:focus { border-color: #38bdf8; }
+.notebook-card .notebook-editor { flex: 1 1 auto; min-height: 100px; resize: none; width: 100%; padding: 12px; }
+.notebook-footer { flex: 0 0 auto; display: flex; justify-content: space-between; align-items: center; color: #8495ae; font-size: .7rem; gap: 10px; }
+.notebook-footer button { color: #e6a6ac; background: transparent; font-size: .75rem; padding: 2px 7px; border-radius: 5px; }
+.notebook-footer button:disabled { opacity: .35; cursor: default; }
+.notebook-footer button:not(:disabled):hover { background: rgba(251,113,133,.1); }
+.pocket-widget-card { display: flex; flex-direction: column; gap: 12px; overflow-y: auto; }
+.pocket-widget-card .card-heading { margin-bottom: 0; flex: 0 0 auto; }
+.pocket-widget-hint { font-size: .74rem; color: #8da0b7; line-height: 1.55; }
+.pocket-widget-error { color: #fda4af; font-size: .86rem; }
+.subnet-results { display: grid; gap: 0; margin: 0; }
+.subnet-results > div { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px; padding: 9px 0; border-bottom: 1px solid rgba(148,163,184,.12); }
+.subnet-results dt { font-size: .78rem; color: #94a3b8; }
+.subnet-results dd { margin: 0; font-family: 'IBM Plex Mono', monospace; color: #e2e8f0; font-size: .8rem; text-align: left; overflow-wrap: anywhere; }
+.commands-actions { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.commands-actions button, .commands-import { display: inline-flex; align-items: center; justify-content: center; border: 1px solid #314761; color: #cbd5e1; border-radius: 7px; background: #203149; padding: 7px 10px; font-size: .76rem; font-weight: 600; cursor: pointer; }
+.commands-actions button:hover, .commands-import:hover { background: #2d4666; }
+.commands-actions button:disabled { opacity: .4; cursor: default; }
+.commands-import input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.commands-import:focus-within { outline: 2px solid #38bdf8; }
+.commands-list { display: flex; flex-direction: column; gap: 4px; overflow-y: auto; max-height: 130px; min-height: 48px; }
+.command-list-item { display: flex; flex-direction: column; gap: 2px; align-items: stretch; text-align: right; padding: 7px 10px; border-radius: 7px; color: #e2e8f0; background: #14243a; font-size: .8rem; }
+.command-list-item small { color: #8da0b7; font-weight: 400; }
+.command-list-item.active { background: #253f5f; box-shadow: inset -3px 0 #38bdf8; }
+.command-editor { display: flex; flex-direction: column; gap: 8px; min-height: 0; }
+.command-fields { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 7px; }
+.commands-card .command-editor textarea { min-height: 84px; max-height: 200px; padding: 10px; font-family: 'IBM Plex Mono', monospace; font-size: .81rem; resize: vertical; }
+@media (max-width: 500px) {
+  .notebook-fields { grid-template-columns: minmax(0, 1fr); gap: 7px; }
+  .notebook-card .notebook-editor { min-height: 75px; }
+  .command-fields { grid-template-columns: minmax(0, 1fr); }
+  .dashboard-widget > .notebook-card { padding: 13px; gap: 7px; }
+}
+
+.notebook-footer { flex-wrap: wrap; }
+.notebook-footer-actions { display:flex; flex-wrap:wrap; gap:3px; justify-content:flex-end; }
+.notebook-footer-actions button { white-space: nowrap; color:#a8c8dc; padding:3px 7px; }
+.notebook-footer-actions button[aria-pressed='true'] { color:#facc15; }
+.notebook-footer-actions .notebook-undo { color:#86efac; }
+
+.commands-filters { display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:.75rem; color:#b8c6d8; }
+.commands-filters select, .command-category-select { border:1px solid #314761; border-radius:7px; background:#17273c; color:#e2e8f0; padding:6px 8px; font-size:.78rem; min-width:0; }
+.commands-filters label { display:flex; align-items:center; gap:4px; }
+.command-list-row { display:flex; gap:3px; }
+.command-list-row .command-list-item { flex:1 1 auto; min-width:0; }
+.command-favorite { width:33px; flex:0 0 33px; background:#17273c; border-radius:7px; color:#facc15; }
+.command-favorite[aria-pressed='true'] { background:#263b56; }
+.command-template-fields { display:grid; gap:6px; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); }
+.command-template-fields label { font-size:.76rem; color:#a8b8ce; display:grid; gap:4px; }
+.command-template-fields p { grid-column:1/-1; }
+.shortcuts-card .shortcut-list { display:grid; gap:7px; overflow-y:auto; max-height:220px; }
+.shortcut-item { display:flex; gap:5px; align-items:stretch; border-radius:9px; background:#112137; padding:5px; }
+.shortcut-open { display:flex; flex-direction:column; gap:2px; min-width:0; flex:1; align-items:stretch; text-align:right; background:transparent; color:#e2e8f0; padding:6px 8px; }
+.shortcut-open:hover { color:#7dd3fc; }
+.shortcut-open small { color:#93a8c2; font-weight:400; overflow:hidden; text-overflow:ellipsis; text-align:left; white-space:nowrap; font-size:.7rem; }
+.shortcut-icon-button { background:#203149; color:#a8b8ce; border-radius:6px; width:29px; flex:0 0 29px; }
+.shortcut-icon-button:hover { color:#fff; background:#314761; }
+.shortcut-form { display:grid; gap:7px; }
+.shortcut-form input { width:100%; min-width:0; background:#0b1627; color:#e2e8f0; border:1px solid #30425b; padding:9px 10px; border-radius:8px; }
+.backup-menu { left:auto; right:0; width:min(290px, 85vw); }
+.backup-import { cursor:pointer; display:block; padding:10px; border-radius:8px; color:#e2e8f0; font-size:.85rem; font-weight:700; }
+.backup-import:hover { background:#203149; }
+.backup-import input { display:block; max-width:100%; margin-top:8px; font-size:.75rem; color:#a8b8ce; }
+
+.network-targets { display:grid; gap:6px; }
+.network-targets > span { font-size:.7rem; color:#93a6bc; }
+.network-target-list { display:flex; flex-wrap:wrap; gap:5px; max-height:86px; overflow-y:auto; }
+.network-target { display:flex; min-width:0; background:#17273c; border:1px solid #30425b; border-radius:7px; overflow:hidden; }
+.network-target button { background:transparent; color:#d5e4f4; padding:5px 7px; font-size:.72rem; min-width:0; overflow:hidden; text-overflow:ellipsis; }
+.network-target button:first-child { max-width:160px; white-space:nowrap; }
+.network-target button:last-child { color:#facc15; border-inline-start:1px solid #30425b; }
+.network-target button:hover { background:#293b53; }
+.network-actions { flex-wrap:wrap; }
+.network-actions .secondary-button { padding:9px 11px; font-size:.75rem; }
+
+
+/* Pocket-style subnet splitting inside the existing draggable widget. */
+.subnet-split-section { border-top: 1px solid rgba(148,163,184,.2); padding-top: 11px; display: grid; gap: 9px; }
+.subnet-split-toggle { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 600; font-size: .85rem; color: #d1deeb; }
+.subnet-split-toggle input { width: 16px; height: 16px; accent-color: #38bdf8; cursor: pointer; }
+.subnet-split-content { display: grid; gap: 9px; min-width: 0; }
+.subnet-split-summary { font-size: .79rem; font-weight: 600; color: #d9e8f8; }
+.subnet-split-table-wrap { overflow: auto; max-height: 240px; border: 1px solid #30425b; border-radius: 9px; }
+.subnet-split-table { border-collapse: collapse; width: 100%; font-family: 'IBM Plex Mono', monospace; font-size: .7rem; color: #dce7f5; }
+.subnet-split-table th, .subnet-split-table td { padding: 8px 10px; white-space: nowrap; text-align: left; border-bottom: 1px solid rgba(148,163,184,.12); }
+.subnet-split-table th { position: sticky; top: 0; background: #1b304b; z-index: 1; color: #b6c8de; }
+.subnet-split-table tr:last-child td { border-bottom: 0; }
+.subnet-split-table tr:nth-child(even) { background: rgba(148,163,184,.05); }
+.subnet-split-table-wrap:focus-visible { outline: 2px solid #38bdf8; outline-offset: 2px; }
+
+
+/* Command reference library: exact Pocket machine/category filters and opt-in templates. */
+.commands-card .commands-search { width:100%; min-width:0; padding:9px 11px; background:#0b1627; border:1px solid #30425b; border-radius:8px; color:#e2e8f0; }
+.commands-card .commands-search:focus { border-color:#38bdf8; outline:none; }
+.commands-card .commands-filters { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; }
+.commands-card .commands-filters select { min-width:0; width:100%; }
+.commands-card .commands-list { max-height:240px; min-height:85px; scrollbar-width:thin; }
+.commands-card .command-list-item { min-width:0; overflow-wrap:anywhere; }
+.commands-card .command-list-item strong { font-weight:600; }
+.commands-card .commands-results-count { color:#8da0b7; font-size:.73rem; }
+.commands-card .command-editor { border-top:1px solid rgba(148,163,184,.18); padding-top:10px; gap:9px; }
+.commands-card .command-editor label:not(.pocket-widget-label) { display:flex; flex-direction:column; gap:5px; min-width:0; color:#a8b8ce; font-size:.75rem; }
+.commands-card .command-editor input, .commands-card .command-editor select,
+.commands-card .command-editor textarea { min-width:0; width:100%; border:1px solid #30425b; background:#0b1627; color:#e2e8f0; border-radius:7px; padding:8px; }
+.commands-card .command-editor input:focus, .commands-card .command-editor textarea:focus,
+.commands-card .command-editor select:focus { outline:1px solid #38bdf8; }
+.commands-card .command-smart-editor, .commands-card .command-smart-fill { display:grid; gap:10px; padding:11px; background:#101f33; border:1px solid #2d4967; border-radius:9px; min-width:0; }
+.commands-card .command-template-config-row { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.4fr) minmax(90px,1fr); gap:6px; align-items:center; }
+.commands-card .command-template-config-row strong { color:#93c5fd; overflow-wrap:anywhere; font-size:.73rem; }
+.commands-card .command-template-choice { grid-column:1/-1; }
+.commands-card .command-template-fields { display:grid; grid-template-columns:repeat(auto-fit,minmax(145px,1fr)); }
+.commands-card .command-template-fields select { width:100%; }
+.commands-card .commands-actions button:focus-visible { outline:2px solid #38bdf8; }
+@media (max-width:600px) {
+  .commands-card .commands-filters { grid-template-columns:minmax(0,1fr) minmax(0,1fr); }
+  .commands-card .command-template-config-row { grid-template-columns:minmax(0,1fr) minmax(0,1fr); }
+  .commands-card .command-template-config-row strong { grid-column:1/-1; }
+}
+
+
+/* Display the actual CLI alongside its description, without replacing the editor below. */
+.commands-card .command-list-preview {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-width: 100%;
+  font-size: .71rem;
+  font-family: 'IBM Plex Mono', Consolas, monospace;
+  line-height: 1.45;
+  text-align: left;
+  color: #acc5e0;
+  unicode-bidi: plaintext;
+}
+.commands-card .command-list-item:hover .command-list-preview,
+.commands-card .command-list-item.active .command-list-preview { color: #d8eafc; }
+.commands-card .command-list-item small { opacity: .8; }
+.commands-card .command-list-row { align-items: stretch; }
+.commands-card .command-smart-editor .commands-actions { margin: 1px 0; }
+.commands-card .command-smart-editor .commands-actions button:disabled { cursor: not-allowed; opacity: .5; }
+
+
+/* The command editor sits in a fixed-height draggable card. Prevent the
+   flex child from shrinking below its content; let the card scroll instead. */
+.commands-card { overflow-x: hidden; overflow-y: auto; }
+.commands-card .command-editor {
+  flex: 0 0 auto;
+  min-height: max-content;
+  overflow: visible;
+}
+.commands-card .command-smart-editor,
+.commands-card .command-smart-fill {
+  flex: 0 0 auto;
+  min-height: max-content;
+  height: auto;
+  align-content: start;
+  grid-auto-rows: max-content;
+  overflow: visible;
+}
+.commands-card .command-smart-editor > *,
+.commands-card .command-smart-fill > * { min-width: 0; }
+.commands-card .command-template-config-row { min-height: max-content; }
+.commands-card > .pocket-widget-hint,
+.commands-card > .commands-actions,
+.commands-card > .commands-filters { flex-shrink: 0; }
+.commands-card .command-template-help {
+  border: 1px solid #30425b;
+  border-radius: 7px;
+  padding: 7px 10px;
+}
+.commands-card .command-template-help summary {
+  cursor: pointer;
+  color: #9fb6ce;
+  font-size: .77rem;
+}
+.commands-card .command-template-help p {
+  padding: 8px 0 2px;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+.commands-card .command-template-count {
+  color: #91abc4;
+  font-size: .75rem;
+}
+.commands-card .command-template-feedback {
+  border-top: 1px solid #30425b;
+  padding-top: 8px;
+  overflow-wrap: anywhere;
+}
