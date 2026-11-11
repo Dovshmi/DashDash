@@ -232,3 +232,143 @@
 .shortcuts-card .shortcut-item { min-width: 0; }
 .shortcuts-card .shortcut-icon-button { flex-shrink: 0; }
 .shortcuts-card .shortcut-open strong { line-height: 1.45; overflow-wrap: anywhere; }
+
+
+
+/* PWA Shortcuts: locally chosen FileSystemHandles, safe read-only explorer. */
+.shortcuts-card { overflow-x: hidden; overflow-y: auto; }
+.shortcuts-card .shortcut-picker-actions {
+  align-items: stretch;
+}
+.shortcuts-card .shortcut-picker-actions button {
+  flex: 1 1 115px;
+  min-width: 0;
+}
+.shortcuts-card .shortcut-local-drop {
+  border: 1px dashed #426185;
+  border-radius: 9px;
+  padding: 10px 12px;
+  color: #91abc4;
+  background: rgba(15, 38, 61, .5);
+  text-align: center;
+  line-height: 1.5;
+  font-size: .73rem;
+  min-width: 0;
+}
+.shortcuts-card .shortcut-local-drop:has(+ .shortcut-list:hover) {
+  border-color: #426185;
+}
+.shortcuts-card .shortcut-list { min-height: 50px; max-height: 260px; flex: 0 0 auto; }
+.shortcuts-card .shortcut-kind {
+  font-size: .69rem;
+  color: #8da6c0;
+}
+.shortcuts-card .shortcut-open { min-width: 0; }
+.shortcuts-card .shortcut-open strong { overflow-wrap: anywhere; }
+.shortcuts-card .shortcut-icon-button { flex: 0 0 27px; width: 27px; }
+.shortcuts-card .shortcut-rename,
+.shortcuts-card .shortcut-browser {
+  display: grid;
+  gap: 9px;
+  padding: 11px;
+  min-width: 0;
+  min-height: max-content;
+  background: #101f33;
+  border: 1px solid #36516d;
+  border-radius: 10px;
+  flex: 0 0 auto;
+  align-content: start;
+}
+.shortcuts-card .shortcut-rename input {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid #30425b;
+  border-radius: 7px;
+  color: #e2e8f0;
+  background: #0b1627;
+  padding: 9px 10px;
+}
+.shortcuts-card .shortcut-browser-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: #d9e7f5;
+  font-size: .81rem;
+}
+.shortcuts-card .shortcut-browser-head strong { min-width: 0; }
+.shortcuts-card .shortcut-browser-head button {
+  flex-shrink: 0;
+  min-width: 30px;
+  padding: 5px 9px;
+  color: #d9e7f5;
+  background: #22354e;
+  border-radius: 6px;
+  font-size: .75rem;
+}
+.shortcuts-card .shortcut-directory-entries {
+  display: grid;
+  gap: 4px;
+  max-height: 260px;
+  overflow-y: auto;
+  min-width: 0;
+}
+.shortcuts-card .shortcut-directory-entries button {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  text-align: start;
+  min-width: 0;
+  background: #17273c;
+  border: 1px solid #2d4159;
+  border-radius: 7px;
+  color: #dae7f5;
+  padding: 8px 9px;
+  font-size: .77rem;
+}
+.shortcuts-card .shortcut-directory-entries button span:nth-child(2) {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.shortcuts-card .shortcut-directory-entries button:hover {
+  background: #29415d;
+}
+.shortcuts-card .shortcut-text-preview {
+  direction: ltr;
+  text-align: start;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  overflow: auto;
+  max-height: 320px;
+  margin: 0;
+  padding: 12px;
+  border-radius: 7px;
+  background: #0a1729;
+  color: #dce7f5;
+  font: .76rem/1.6 'IBM Plex Mono', Consolas, monospace;
+}
+.shortcuts-card .shortcut-image-preview {
+  max-width: 100%;
+  max-height: 320px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  justify-self: center;
+  border-radius: 7px;
+}
+.shortcuts-card .shortcut-pdf-preview {
+  width: 100%;
+  height: 340px;
+  border: 1px solid #30425b;
+  border-radius: 7px;
+  background: white;
+}
+.shortcuts-card .shortcut-browser .pocket-widget-hint { overflow-wrap: anywhere; }
+@media (max-width: 600px) {
+  .shortcuts-card .shortcut-icon-button { flex-basis: 25px; width: 25px; }
+  .shortcuts-card .shortcut-item { gap: 3px; padding: 4px; }
+  .shortcuts-card .shortcut-pdf-preview { height: 270px; }
+}

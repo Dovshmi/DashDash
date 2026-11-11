@@ -110,9 +110,14 @@ tbh rumv kf,uc  →  אני רוצה לכתוב
 
 ### Backup, restore and shortcuts
 
-- **גיבוי ושחזור** in the toolbar exports a user-initiated JSON backup of local DashDash data (including notes, commands, shortcuts, drawing instances, timer history, layouts, and widget settings). Import validates the file and requires confirmation before replacing matching local keys. The original backup is never uploaded to a server.
-- **Quick Shortcuts** is a draggable widget for user-defined HTTP/HTTPS website links. Only explicit clicks open links, in a new tab. Browsers cannot directly launch arbitrary Windows programs or local folders as Pocket can.
-- Browser storage is per origin; production and test previews maintain separate copies. Backups are unencrypted and may include sensitive data.
+- **גיבוי ושחזור** in the toolbar exports an explicit JSON backup of localStorage data (notes, commands, URL and manually entered path shortcuts, drawing instances, timer history, layouts and settings). Import validates the file and requires confirmation. Backups stay in the user's browser and can contain sensitive information.
+- **Quick Shortcuts** supports user-defined HTTPS/HTTP links, manually entered file or folder paths (copy-only), and Chrome/Edge File System Access shortcuts selected using **Choose File**, **Choose Folder**, or drag/drop from Explorer.
+- Browser-selected **file and directory handles are saved locally in IndexedDB**, not localStorage. Selecting an existing file shortcut opens a *read-only preview* for common text, configuration/source, image, and PDF files (512 KiB text limit; 12 MiB image/PDF limit). Selecting a saved directory shortcut lists up to 150 immediate entries; users can manually enter nested folders or preview files.
+- On reopening the installed PWA, the browser may ask for read permission again. No filesystem access is automatic, no files are uploaded, and no files, EXEs, or Windows Explorer windows are launched.
+- **Important:** Local filesystem handles/permissions are not included in JSON backups. After switching devices, profiles, or domains, select the file or folder again. Browser handles do not reveal absolute paths; copying a selected file/folder handle copies its **name** only, whereas manually entered absolute paths can be copied in full.
+- This requires Chromium-style desktop File System Access APIs (showOpenFilePicker and showDirectoryPicker); unsupported browsers retain URL and copy-only path functionality. The browser origin must be secure (HTTPS or localhost).
+- Browser storage is per origin; production and test previews maintain separate databases. Backups are unencrypted and can contain sensitive data.
+
 
 ### Network tools
 
