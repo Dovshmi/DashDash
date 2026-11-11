@@ -1,12 +1,6 @@
 // Local IEEE-derived registry. No runtime downloads, external API calls or MAC-address transmission.
 import ouiData from 'oui-data' with { type: 'json' };
-
-function normalizeMac(input) {
-  const raw = input.trim();
-  if (raw.includes(':') && raw.includes('-')) return null;
-  if (!/^(?:[a-f\d]{12}|(?:[a-f\d]{2}[:-]){5}[a-f\d]{2}|[a-f\d]{4}(?:\.[a-f\d]{4}){2})$/i.test(raw)) return null;
-  return raw.replace(/[:.\-]/g, '').toUpperCase();
-}
+import { normalizeMac } from '../src/mac-utils.js';
 
 function findVendor(mac) {
   for (const [length, registry] of [[9,'MA-S'], [7,'MA-M'], [6,'MA-L']]) {
@@ -28,10 +22,14 @@ export default async function handler(req, res) {
       macs.some(x => typeof x !== 'string' || x.length > 32)) {
     return res.status(400).json({error:'Provide 1–100 MAC addresses'});
   }
+  const seen = new Set();
+  const valid = macs.map(input => ({input, mac: normalizeMac(input)})).filter(({mac}) => {
+    if (!mac || seen.has(mac)) return false;
+    seen.add(mac);
+    return true;
+  });
   res.setHeader('Cache-Control','no-store');
-  return res.status(200).json({ results: macs.map(input => {
-    const mac = normalizeMac(input);
-    if (!mac) return {input, mac:'—', vendor:'Invalid MAC', registry:'—'};
+  return res.status(200).json({ results: valid.map(({input, mac}) => {
     const pretty = mac.match(/.{2}/g).join(':');
     const firstByte = parseInt(mac.slice(0, 2), 16);
     if (firstByte & 1) return {input,mac:pretty,vendor:'Multicast / group address',registry:'Special'};

@@ -1,14 +1,8 @@
 import { useEffect, useState } from 'react';
 import { sortPortResults } from './port-results.js';
+import { extractMacAddresses, normalizeMac } from './mac-utils.js';
 import { portServiceLabel, readNetworkTargets, rememberNetworkTarget, sortNetworkTargets, toggleNetworkFavorite } from './network-utils.js';
 
-const MAC_PATTERN = /^(?:[0-9a-f]{12}|(?:[0-9a-f]{2}[:-]){5}[0-9a-f]{2}|[0-9a-f]{4}(?:\.[0-9a-f]{4}){2})$/i;
-const NORMALIZE = (mac) => mac.replace(/[:-]|\./g, '').toUpperCase();
-const cleanMac = (mac) => {
-  const text = mac.trim();
-  if (!MAC_PATTERN.test(text) || (text.includes(':') && text.includes('-'))) return null;
-  return NORMALIZE(text);
-};
 function exportResults(results) {
   const escape = (value) => '"' + String(value ?? '').replace(/"/g, '""').replace(/^[=+@-]/, "'$&") + '"';
   const csv = [['MAC', 'Vendor', 'Registry'], ...results.map((x) => [x.mac, x.vendor, x.registry])].map((r) => r.map(escape).join(',')).join('\r\n');
@@ -69,20 +63,22 @@ export function MacCheck() {
   const [message,setMessage] = useState('');
   const history = useTargetHistory('mac');
   async function check() {
-    const candidates = input.split(/[,;\s]+/).filter(Boolean);
-    if (!candidates.length || candidates.length > 100) { setError('Enter 1–100 MAC addresses.'); return; }
+    const candidates = extractMacAddresses(input);
+    setRows([]); setMessage('');
+    if (!candidates.length) { setError('לא נמצאו כתובות MAC תקינות.'); return; }
+    if (candidates.length > 100) { setError('ניתן לבדוק עד 100 כתובות MAC תקינות בכל פעם.'); return; }
     setBusy(true); setError('');
     try {
       const response = await fetch('/api/mac-lookup', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ macs: candidates }) });
       const data = await readApiJson(response);
       if (!response.ok) throw new Error(data.error || 'MAC lookup failed');
-      setRows(data.results);
+      setRows(Array.isArray(data.results) ? data.results.filter((row) => normalizeMac(row?.mac)) : []);
       history.remember(candidates.join(', '));
-    } catch (e) { setError(e.message); } finally { setBusy(false); }
+    } catch (e) { setError(e.message); setRows([]); } finally { setBusy(false); }
   }
   return <section className="card network-card mac-check-card">
     <div className="card-heading drag-handle"><div><p className="eyebrow">IEEE OUI</p><h2>בדיקת כתובת MAC</h2></div></div>
-    <p className="network-hint">זיהוי יצרן לפי מאגר IEEE, כולל כתובות מקומיות ו־Multicast. ניתן להדביק מספר כתובות.</p>
+    <p className="network-hint">זיהוי יצרן לפי מאגר IEEE. ניתן להדביק רשימות, לוגים או טקסט מעורב: רק כתובות MAC תקינות יוצגו. כתובות מקומיות ו־Multicast נתמכות.</p>
     <textarea dir="ltr" aria-label="MAC addresses" rows="3" placeholder={'00:1A:2B:3C:4D:5E\n0011.2233.4455'} value={input} onChange={(e) => setInput(e.target.value)} />
     <TargetHistory items={history.items} onSelect={setInput} onToggle={history.toggle}/>
     <div className="network-actions"><button className="primary-button" disabled={busy} onClick={check}>{busy ? 'בודק...' : 'בדוק MAC'}</button>{rows.length > 0 && <><button className="secondary-button" onClick={() => copyRows(rows.map((x) => x.mac + ' | ' + x.vendor + ' | ' + x.registry).join('\n'),setMessage)}>העתק</button><button className="secondary-button" onClick={() => exportResults(rows)}>CSV</button></>}</div>
