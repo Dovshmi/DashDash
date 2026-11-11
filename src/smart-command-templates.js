@@ -1,8 +1,10 @@
 // Pocket-compatible, opt-in smart CLI templates. They are copy-only.
 export const TEMPLATE_FIELD_TYPES = ['text','ipv4','ipv6','cidr','ipv6_cidr','port','vlan','integer','interface','vrf','mac','choice'];
-const TOKEN = /\{\{([A-Za-z][A-Za-z0-9_]{0,31})\}\}/g;
-const FIELD_NAME = /^[A-Za-z][A-Za-z0-9_]{0,31}$/;
-const HINTS = /(?<!\{)\{([A-Za-z][\w -]{0,35})\}(?!\})|<([^<>\n]{1,44})>|\[([^\[\]\n]{1,48})\]|[xX]\.[xX]\.[xX]\.[xX](?:\s*\((start|end|source|destination|lan|wan)\))?|\*[A-Za-z][A-Za-z0-9_-]{1,23}\*|\bx\/x(?:\/x)?\b/g;
+// Explicit template fields may describe interface names such as {{1/11}},
+// as well as ordinary {{IP}} / {{VLAN}} fields and Hebrew labels.
+const TOKEN = /\{\{([^{}\r\n]{1,64})\}\}/g;
+const FIELD_NAME = /^[\p{L}\p{N}_][\p{L}\p{N}_./: -]{0,63}$/u;
+const HINTS = /\{\{([^{}\r\n]{1,64})\}\}|(?<!\{)\{([A-Za-z][\w -]{0,35})\}(?!\})|<([^<>\n]{1,44})>|\[([^\[\]\n]{1,48})\]|[xX]\.[xX]\.[xX]\.[xX](?:\s*\((start|end|source|destination|lan|wan)\))?|\*[A-Za-z][A-Za-z0-9_-]{1,23}\*|\bx\/x(?:\/x)?\b/g;
 const MAX_FIELDS = 12;
 const MAX_FORMAT = 6000;
 
@@ -10,7 +12,10 @@ export function templateFieldNames(format) {
   return [...new Set([...String(format || '').matchAll(TOKEN)].map((match) => match[1]))];
 }
 export function guessFieldType(name) {
-  const key = String(name || '').toLowerCase();
+  const key = String(name || '').toLowerCase().trim();
+  // Interface indexes (e.g. 1/11, 1/1/1, ge-0/0/1) must not be
+  // treated as a CIDR or an integer just because they contain digits.
+  if (/^\d+(?:\/\d+)+$/.test(key) || /^(?:ge|xe|et|gi|fa|eth|port)[-\w]*\d+(?:\/\d+)+$/.test(key)) return 'interface';
   if (key.includes('ipv6') && (key.includes('cidr') || key.includes('prefix') || key.includes('subnet'))) return 'ipv6_cidr';
   if (key.includes('cidr') || key.includes('prefix') || key.includes('subnet')) return 'cidr';
   if (key.includes('ipv6')) return 'ipv6';
@@ -48,49 +53,61 @@ function uniqueHintName(text, used, allowReuse) {
 }
 export function suggestSmartTemplate(command) {
   if (typeof command !== 'string' || !command.trim()) return null;
-  const explicit = templateFieldNames(command);
-  if (explicit.length) return {
-    version:1, source_command:command, format:command,
-    fields: defaultTemplateFields(command),
-    warnings:['Review all fields and syntax before saving.'],
-  };
-  let formatted = '';
+
+  // Analyze explicit {{NAME}} fields together with Pocket's conservative
+  // hints ({VRF}, <IP>, [interface], x.x.x.x, x/x), instead of stopping
+  // at the first explicit field. Fixed addresses/numbers stay literal.
+  const pieces = [];
   let cursor = 0;
   const used = new Set();
   const fields = [];
   for (const match of command.matchAll(HINTS)) {
+    if (match.index < cursor) continue;
     const raw = match[0];
+    let name;
     let label;
     let type;
-    let reuse = false;
-    if (match[1]) { label = match[1].trim(); reuse = true; }
-    else if (match[2]) { label = match[2].trim(); if (!/[a-z]/i.test(label)) continue; }
-    else if (match[3]) {
-      label = match[3].trim();
-      if (!/[a-z]/i.test(label) || label.includes('|') || (label.match(/\//g)||[]).length > 1) continue;
+    if (match[1] !== undefined) {
+      name = match[1];
+      if (!FIELD_NAME.test(name)) continue;
+      label = name;
+    } else {
+      let sourceLabel;
+      let canReuse = false;
+      if (match[2]) { sourceLabel = match[2].trim(); canReuse = true; }
+      else if (match[3]) {
+        sourceLabel = match[3].trim();
+        if (!/[a-z]/i.test(sourceLabel)) continue;
+      } else if (match[4]) {
+        sourceLabel = match[4].trim();
+        if (!/[a-z]/i.test(sourceLabel) || sourceLabel.includes('|') ||
+            (sourceLabel.match(/\//g) || []).length > 1) continue;
+      } else if (/^[xX]\.[xX]\.[xX]\.[xX]/.test(raw)) {
+        sourceLabel = match[5] ? match[5].toUpperCase() + '_IP' : 'IP';
+        type = 'ipv4';
+      } else if (raw.startsWith('*')) sourceLabel = raw.slice(1,-1);
+      else if (/^x\/x/i.test(raw)) { sourceLabel = 'INTERFACE'; type = 'interface'; }
+      else continue;
+      name = uniqueHintName(sourceLabel, used, canReuse);
+      label = sourceLabel.replace(/_/g, ' ');
     }
-    else if (/^[xX]\.[xX]\.[xX]\.[xX]/.test(raw)) {
-      label = match[4] ? (match[4].toUpperCase() + '_IP') : 'IP';
-      type = 'ipv4';
-    } else if (raw.startsWith('*')) label = raw.slice(1,-1);
-    else if (/^x\/x/.test(raw)) { label = 'INTERFACE'; type = 'interface'; }
-    else continue;
-    if (match.index < cursor) continue;
-    const name = uniqueHintName(label, used, reuse);
-    formatted += command.slice(cursor,match.index) + '{{' + name + '}}';
+    pieces.push(command.slice(cursor,match.index), '{{' + name + '}}');
     if (!fields.some((field) => field.name === name)) {
-      fields.push({name,label:label.replace(/_/g,' '),type:type || guessFieldType(label)});
+      fields.push({name,label,type:type || guessFieldType(name)});
     }
-    cursor = match.index + raw.length;
     if (fields.length > MAX_FIELDS) return null;
+    used.add(name);
+    cursor = match.index + raw.length;
   }
-  formatted += command.slice(cursor);
-  if (!fields.length || formatted === command) return null;
+  if (!fields.length) return null;
+  pieces.push(command.slice(cursor));
   return {
-    version:1,source_command:command,format:formatted,fields,
+    version:1, source_command:command,
+    format:pieces.join(''), fields,
     warnings:['Review all suggested fields and syntax before saving.'],
   };
 }
+
 export function validateSmartTemplate(template, sourceCommand) {
   if (!template || typeof template !== 'object' || typeof sourceCommand !== 'string') {
     throw new Error('מבנה טמפלייט לא תקין.');

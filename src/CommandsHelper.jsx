@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import {
   MAX_COMMANDS, RECENT_COMMANDS_KEY, exportCommandDocument, listCommandCategories,
   listCommandMachines, mergeCommandDocument, readCommandLibrary, readCommandRecent,
@@ -6,7 +6,7 @@ import {
 } from './command-library.js';
 import {
   TEMPLATE_FIELD_TYPES, defaultTemplateFields, renderSmartTemplate,
-  smartTemplateState, suggestSmartTemplate, validateSmartTemplate,
+  smartTemplateState, suggestSmartTemplate, templateFieldNames, validateSmartTemplate,
 } from './smart-command-templates.js';
 
 const INITIAL_MACHINE = 'All machines';
@@ -32,6 +32,7 @@ export default function CommandsHelper() {
   const [templateOpen, setTemplateOpen] = useState(false);
   const [templateDraft, setTemplateDraft] = useState(null);
   const [templateValues, setTemplateValues] = useState({});
+  const templateEditorRef = useRef(null);
 
   const machines = useMemo(() => listCommandMachines(library), [library]);
   const categories = useMemo(() => listCommandCategories(library, machine), [library, machine]);
@@ -150,6 +151,25 @@ export default function CommandsHelper() {
       format, fields:defaultTemplateFields(format,previous?.fields),
     }));
   }
+  function insertTemplateVariable() {
+    if (!templateDraft) return;
+    const current = templateDraft.format;
+    const existing = new Set(templateFieldNames(current));
+    if (existing.size >= 12) {
+      setStatus('ניתן להגדיר עד 12 משתנים בטמפלייט אחד.');
+      return;
+    }
+    let number = 1;
+    while (existing.has('FIELD_' + number)) number++;
+    const name = 'FIELD_' + number;
+    const editor = templateEditorRef.current;
+    const start = Number.isInteger(editor?.selectionStart) ? editor.selectionStart : current.length;
+    const end = Number.isInteger(editor?.selectionEnd) ? editor.selectionEnd : current.length;
+    const inserted = '{{' + name + '}}';
+    editTemplateFormat(current.slice(0, start) + inserted + current.slice(end));
+    setStatus('נוסף המשתנה ' + inserted + '. אפשר לשנות את שמו ואת סוגו.');
+    editor?.focus();
+  }
   function editTemplateField(name, values) {
     setTemplateDraft((old) => ({
       ...old,fields:old.fields.map((field) => field.name === name ? {...field,...values} : field),
@@ -230,7 +250,8 @@ export default function CommandsHelper() {
         : found.rows.map((row) => <div className="command-list-row" key={row.id} role="listitem">
           <button type="button" className={row.id === selectedId ? 'command-list-item active' : 'command-list-item'}
             onClick={() => select(row.id)}>
-            <strong>{row.description || row.command.slice(0,75) || 'פקודה חדשה'}</strong>
+            <strong>{row.description || 'פקודה חדשה'}</strong>
+            <code className="command-list-preview" dir="ltr" title={row.command || 'עדיין לא הוגדרה פקודה'}>{row.command || '—'}</code>
             <small>{row.machine} · {row.category}{smartTemplateState(row) === 'configured' ? ' · Template' : ''}</small>
           </button>
           <button type="button" className="command-favorite" aria-label={row.favorite ? 'הסר ממועדפים' : 'הוסף למועדפים'}
@@ -272,12 +293,16 @@ export default function CommandsHelper() {
         <p className="pocket-widget-hint">זוהו שדות אפשריים לטמפלייט. אפשר לאשר הצעה בלי לשנות את הפקודה המקורית.</p>}
       {templateOpen && templateDraft && <div className="command-smart-editor">
         <strong>הגדרת טמפלייט · אישור ידני בלבד</strong>
-        <p className="pocket-widget-hint">הפורמט להעתקה נפרד מהפקודה המקורית. הוסף משתנים כגון {"{{IP}}"} או {"{{VLAN}}"}.</p>
+        <p className="pocket-widget-hint">הפורמט להעתקה נפרד מהפקודה המקורית. אפשר להגדיר כמה משתנים שונים, למשל {"{{IP}}"}, {"{{SOURCE_IP}}"}, {"{{VLAN}}"} וגם {"{{1/11}}"}. כל משתנה מקבל שדה מילוי משלו.</p>
+        <p className="pocket-widget-hint">{templateDraft.fields.length} משתנים מזוהים · שמות שחוזרים כמה פעמים מקבלים שדה אחד משותף.</p>
         <label className="pocket-widget-label">פורמט הטמפלייט
           <textarea dir="ltr" spellCheck={false} value={templateDraft.format} maxLength={6000}
-            aria-label="פורמט הטמפלייט" onChange={(event) => editTemplateFormat(event.target.value)} />
+            ref={templateEditorRef} aria-label="פורמט הטמפלייט"
+            onChange={(event) => editTemplateFormat(event.target.value)} />
         </label>
         <div className="commands-actions">
+          <button type="button" onClick={insertTemplateVariable} disabled={templateDraft.fields.length >= 12}
+            title="הוסף משתנה למקום שבו נמצא הסמן בפורמט">＋ הוסף משתנה במיקום הסמן</button>
           {suggestedTemplate && <button type="button" onClick={() => openTemplate(true)}>השתמש בהצעה חכמה</button>}
         </div>
         {templateDraft.fields.map((field) => <div className="command-template-config-row" key={field.name}>

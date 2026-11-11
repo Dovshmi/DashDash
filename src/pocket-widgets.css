@@ -135,3 +135,28 @@
   .commands-card .command-template-config-row { grid-template-columns:minmax(0,1fr) minmax(0,1fr); }
   .commands-card .command-template-config-row strong { grid-column:1/-1; }
 }
+
+
+/* Display the actual CLI alongside its description, without replacing the editor below. */
+.commands-card .command-list-preview {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-width: 100%;
+  font-size: .71rem;
+  font-family: 'IBM Plex Mono', Consolas, monospace;
+  line-height: 1.45;
+  text-align: left;
+  color: #acc5e0;
+  unicode-bidi: plaintext;
+}
+.commands-card .command-list-item:hover .command-list-preview,
+.commands-card .command-list-item.active .command-list-preview { color: #d8eafc; }
+.commands-card .command-list-item small { opacity: .8; }
+.commands-card .command-list-row { align-items: stretch; }
+.commands-card .command-smart-editor .commands-actions { margin: 1px 0; }
+.commands-card .command-smart-editor .commands-actions button:disabled { cursor: not-allowed; opacity: .5; }
