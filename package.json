@@ -13,6 +13,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@vercel/analytics": "^2.0.1",
     "@vitejs/plugin-react": "latest",
     "nodemailer": "^9.0.3",
     "oui-data": "2.1.40",
