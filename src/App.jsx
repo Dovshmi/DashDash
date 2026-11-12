@@ -3,6 +3,7 @@ import ReactGridLayout, { useContainerWidth } from 'react-grid-layout';
 import { verticalCompactor } from 'react-grid-layout/core';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
+import { Analytics } from '@vercel/analytics/react';
 import Notebook from './Notebook.jsx';
 import { MacCheck, PortCheck } from './NetworkWidgets.jsx';
 import CommandsHelper from './CommandsHelper.jsx';
@@ -481,5 +482,6 @@ export default function App() {
       </ReactGridLayout>}
     </div>
     <footer>המידע נשמר מקומית בדפדפן הזה בלבד.</footer>
+    <Analytics />
   </main>;
 }
