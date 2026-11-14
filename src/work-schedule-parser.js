@@ -166,7 +166,8 @@ function parseSheet(bytes, name, shared, styles, date1904) {
     const colors = {};
     for (const cell of row.getElementsByTagName('c')) {
       const column = columnIndex(cell.getAttribute('r'));
-      if (column < 0 || column >= 300) continue;
+      if (column < 0) continue;
+      if (column >= 300) throw new Error('גיליון מכיל יותר מ-300 עמודות ולא ניתן לוודא שכל המידע נקלט.');
       const styleId = Number(cell.getAttribute('s') || 0);
       const value = getCellValue(cell, shared, styles.formats.get(styleId) || '', date1904);
       if (value !== '') {
@@ -199,7 +200,8 @@ export async function readScheduleExcel(file) {
     sheets.push(parseSheet(files.get(path), sheet.getAttribute('name') || path, shared, styles, date1904));
   }
   if (!sheets.length) throw new Error('לא נמצאו גיליונות קריאים בקובץ Excel.');
-  return { filename: file.name, sheets, week: weekFromText(file.name), cellCount: sheets.reduce((n, s) => n + s.cellCount, 0) };
+  return { filename: file.name, sheets, week: weekFromText(file.name), cellCount: sheets.reduce((n, s) => n + s.cellCount, 0),
+    unresolvedFormulas: sheets.reduce((n, sheet) => n + sheet.rows.reduce((count, row) => count + Object.values(row.cells).filter((value) => value.startsWith('[נוסחה ללא ערך מחושב:')).length, 0), 0) };
 }
 
 const DAY_TESTS = [
