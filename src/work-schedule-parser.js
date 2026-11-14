@@ -40,7 +40,7 @@ function parseXml(bytes, path) {
 async function unzip(buffer) {
   const data = new Uint8Array(buffer);
   if (data.length > MAX_ARCHIVE_BYTES) throw new Error('קובץ גדול מדי (מעל 40MB).');
-  if (decoder.decode(data.subarray(0, 12)).includes('MSMAMARPCRYPT')) {
+  if (decoder.decode(data.subarray(0, 32)).includes('MSMAMARPCRYPT')) {
     throw new Error('קובץ ה-Excel מוגן באמצעות הצפנה ארגונית (Microsoft Purview / MIP). יש לייצא עותק שמותר לקרוא ללא ההצפנה; הכלי לא עוקף את ההגנה.');
   }
   const v = new DataView(buffer);
