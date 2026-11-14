@@ -1,5 +1,5 @@
-import { useMemo, useRef, useState } from 'react';
-import { categoryForText, cleanText, columnName, DAY_NAMES, findWeekMismatch, getScheduleEntries, guessMapping, pdfLinesFromItems, PDF_CATEGORIES, readScheduleExcel, weekFromText } from './work-schedule-parser.js';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { cleanText, columnName, findWeekMismatch, getScheduleEntries, guessMapping, pdfLinesFromItems, PDF_CATEGORIES, readScheduleExcel, weekFromText } from './work-schedule-parser.js';
 import './work-schedule.css';
 
 const MAX_VISIBLE = 120;
@@ -97,6 +97,8 @@ export default function WorkSchedule() {
   ), [pdf, pdfPage, pdfCategory, query]);
   const mismatch = findWeekMismatch(excel?.week, pdf?.week);
   const unsure = sheet && mapping.type === 'raw';
+  const dayOptions = useMemo(() => unique(entries.map((r) => r.day)).slice(0, 500), [entries]);
+  useEffect(() => () => { if (urlRef.current) URL.revokeObjectURL(urlRef.current); }, []);
   const hasPdf = Boolean(pdf || pdfUrl);
 
   async function uploadExcel(file) {
@@ -184,10 +186,10 @@ export default function WorkSchedule() {
         </div>}
       </div>}
       {view === 'interpreted' && <>
-        {(employeeOptions.length > 0 || managerOptions.length > 0 || mapping.type === 'calendar') && <div className="schedule-filter-row">
+        {(employeeOptions.length > 0 || managerOptions.length > 0 || dayOptions.length > 0) && <div className="schedule-filter-row">
           {employeeOptions.length > 0 && <label>עובד<select value={employee} onChange={(e) => { setEmployee(e.target.value); setVisibleExcel(MAX_VISIBLE); }}><option value="">כל העובדים</option>{employeeOptions.map((value) => <option key={value}>{value}</option>)}</select></label>}
           {managerOptions.length > 0 && <label>מנהל צוות<select value={manager} onChange={(e) => { setManager(e.target.value); setVisibleExcel(MAX_VISIBLE); }}><option value="">כל המנהלים</option>{managerOptions.map((value) => <option key={value}>{value}</option>)}</select></label>}
-          {mapping.type === 'calendar' && <label>יום<select value={day} onChange={(e) => { setDay(e.target.value); setVisibleExcel(MAX_VISIBLE); }}><option value="">כל הימים</option>{DAY_NAMES.map((d) => <option key={d}>{d}</option>)}</select></label>}
+          {dayOptions.length > 0 && <label>יום / תאריך<select value={day} onChange={(e) => { setDay(e.target.value); setVisibleExcel(MAX_VISIBLE); }}><option value="">כל הימים</option>{dayOptions.map((d) => <option key={d}>{d}</option>)}</select></label>}
         </div>}
         {unsure && <p className="schedule-warning">לא זוהו עמודות העובדים והמשמרות באופן אמין. הרשומות מוצגות ללא שיוך משוער; אפשר למפות עמודות ידנית או לפתוח את תצוגת התאים המקוריים.</p>}
         <p className="schedule-count">מוצגות {Math.min(filteredEntries.length, visibleExcel)} מתוך {filteredEntries.length} רשומות · מקור: {sheet?.name}</p>
@@ -200,7 +202,7 @@ export default function WorkSchedule() {
       {view === 'raw' && <>
         <p className="schedule-count">כל השורות שאינן ריקות · {Math.min(filteredRows.length, visibleExcel)} מתוך {filteredRows.length} שורות. צבעי רקע מסוימים נשמרים מהקובץ.</p>
         <div className="schedule-table-scroll"><table className="schedule-table schedule-raw"><thead><tr><th>שורה</th>{Array.from({length:cols},(_,i)=><th key={i}>{columnName(i)}</th>)}</tr></thead><tbody>
-          {filteredRows.slice(0, visibleExcel).map((row)=><tr key={row.number}><td className="schedule-source">{row.number}</td>{Array.from({length:cols},(_,i)=><td key={i} style={row.colors[i] ? {borderBottomColor:row.colors[i], borderBottomWidth:3}:undefined}>{row.cells[i] || ''}</td>)}</tr>)}
+          {filteredRows.slice(0, visibleExcel).map((row)=><tr key={row.number}><td className="schedule-source">{row.number}</td>{Array.from({length:cols},(_,i)=><td key={i} style={row.colors[i] ? {backgroundColor:row.colors[i], color: '#17212f'}:undefined}>{row.cells[i] || ''}</td>)}</tr>)}
         </tbody></table></div>
         {filteredRows.length > visibleExcel && <button type="button" className="schedule-more" onClick={() => setVisibleExcel((n)=>n+MAX_VISIBLE)}>הצג עוד {Math.min(MAX_VISIBLE,filteredRows.length-visibleExcel)} שורות</button>}
       </>}
