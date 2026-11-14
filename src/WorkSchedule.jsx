@@ -74,7 +74,7 @@ export default function WorkSchedule() {
 
   const sheet = excel?.sheets.find((s) => s.name === sheetName) || excel?.sheets[0];
   const guessedMapping = sheet ? guessMapping(sheet) : { type: 'raw', rowNumber: 0 };
-  const cols = sheet ? Math.min(100, Math.max(1, ...sheet.rows.flatMap((r) => Object.keys(r.cells).map((k) => Number(k) + 1)))) : 1;
+  const cols = sheet ? Math.min(300, Math.max(1, ...sheet.rows.flatMap((r) => Object.keys(r.cells).map((k) => Number(k) + 1)))) : 1;
   const mapping = mappingType === 'auto' ? guessedMapping
     : mappingType === 'table' ? { type: 'table', rowNumber: Number(customMapping.rowNumber) || 1,
       employee: customMapping.employee === '' ? undefined : Number(customMapping.employee),
@@ -164,6 +164,7 @@ export default function WorkSchedule() {
     {excelError && <p className="schedule-error" role="alert">{excelError}</p>}
     {pdfError && <p className="schedule-error" role="alert">{pdfError}</p>}
     {mismatch && <p className="schedule-warning" role="alert">⚠ {mismatch} מומלץ לא לשייך אירועים מה-PDF למשמרות עד לווידוא.</p>}
+    {excel?.unresolvedFormulas > 0 && <p className="schedule-warning" role="alert">⚠ {excel.unresolvedFormulas} תאים מכילים נוסחה ללא תוצאה שמורה בקובץ. חובה לבדוק את ערכם באקסל המקורי.</p>}
     {status && !loadingExcel && !loadingPdf && <p className="schedule-status" role="status">{status}</p>}
 
     {(excel || hasPdf) && <div className="schedule-search-line">
