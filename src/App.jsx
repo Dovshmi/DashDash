@@ -10,6 +10,7 @@ import CommandsHelper from './CommandsHelper.jsx';
 import SubnetCalculator from './SubnetCalculator.jsx';
 import QuickShortcuts from './QuickShortcuts.jsx';
 import BackupControls from './BackupControls.jsx';
+import WorkSchedule from './WorkSchedule.jsx';
 import { singleNotebookWidgets } from './notebook-data.js';
 import { createDefaultDashboardLayout, formatAlertDuration, formatDuration, formatPersonalTotal, formatSessionDuration, keyboardTranslate, normalizeDashboardLayout, normalizeWidgetIds, removeHistoryItem, shouldSendPersonalTimeAlert, toDateKey } from './utils.js';
 
@@ -35,6 +36,7 @@ const WIDGETS = [
   { id: 'shortcuts', name: 'Quick Shortcuts', description: 'קיצורי דרך לאתרים' },
   { id: 'mac', name: 'MAC Lookup', description: 'בדיקת יצרן לפי IEEE' },
   { id: 'ports', name: 'Port Check', description: 'בדיקת פורטי TCP ציבוריים' },
+  { id: 'schedule', name: 'סידור עבודה ומשימות', description: 'Excel למשמרות · PDF אופציונלי' },
 ];
 const WIDGET_IDS = WIDGETS.map((widget) => widget.id);
 const DASHBOARD_LAYOUT = [
@@ -47,6 +49,7 @@ const DASHBOARD_LAYOUT = [
   { i: 'mac', x: 0, y: 40, w: 6, h: 12, minW: 4, minH: 8 },
   { i: 'ports', x: 6, y: 40, w: 6, h: 12, minW: 4, minH: 8 },
   { i: 'shortcuts', x: 0, y: 52, w: 6, h: 12, minW: 4, minH: 8 },
+  { i: 'schedule', x: 0, y: 64, w: 12, h: 18, minW: 5, minH: 12 },
 ];
 
 const MOBILE_WIDGET_IDS = ['timer', 'notes', 'drawing'];
@@ -60,6 +63,7 @@ const MOBILE_DASHBOARD_LAYOUT = [
   { i: 'mac', x: 0, y: 78, w: 4, h: 12, minW: 1, minH: 8 },
   { i: 'ports', x: 0, y: 90, w: 4, h: 12, minW: 1, minH: 8 },
   { i: 'shortcuts', x: 0, y: 102, w: 4, h: 12, minW: 1, minH: 8 },
+  { i: 'schedule', x: 0, y: 114, w: 4, h: 20, minW: 1, minH: 12 },
 ];
 
 const DEFAULT_TIMER_PRESETS = [
@@ -479,6 +483,7 @@ export default function App() {
       {currentWidgetIds.includes('shortcuts') && <div key="shortcuts" data-widget-id="shortcuts" className="dashboard-widget"><button className="widget-remove" onClick={() => removeWidget('shortcuts')} aria-label="הסר קיצורי דרך" title="הסר כלי">×</button><QuickShortcuts /></div>}
       {currentWidgetIds.includes('mac') && <div key="mac" data-widget-id="mac" className="dashboard-widget"><button className="widget-remove" onClick={() => removeWidget('mac')} aria-label="הסר בדיקת MAC" title="הסר כלי">×</button><MacCheck /></div>}
       {currentWidgetIds.includes('ports') && <div key="ports" data-widget-id="ports" className="dashboard-widget"><button className="widget-remove" onClick={() => removeWidget('ports')} aria-label="הסר בדיקת פורטים" title="הסר כלי">×</button><PortCheck /></div>}
+      {currentWidgetIds.includes('schedule') && <div key="schedule" data-widget-id="schedule" className="dashboard-widget"><button className="widget-remove" onClick={() => removeWidget('schedule')} aria-label="הסר סידור עבודה" title="הסר כלי">×</button><WorkSchedule /></div>}
       </ReactGridLayout>}
     </div>
     <footer>המידע נשמר מקומית בדפדפן הזה בלבד.</footer>

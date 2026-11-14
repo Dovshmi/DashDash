@@ -19,7 +19,8 @@
     "oui-data": "2.1.40",
     "react": "latest",
     "react-dom": "latest",
-    "react-grid-layout": "^2.2.4"
+    "react-grid-layout": "^2.2.4",
+    "pdfjs-dist": "6.5.438"
   },
   "devDependencies": {
     "jsdom": "latest",
