@@ -16,7 +16,7 @@
 </div>
 
 <div align="center">
-  <p><strong>A local-first, mobile-friendly, RTL workspace for personal timers, quick notes, drawing, clipboard correction, and reusable work shortcuts.</strong></p>
+  <p><strong>A local-first, mobile-friendly, RTL workspace for personal timers, quick notes, drawing, network diagnostics, and shift schedules.</strong></p>
   <p>
     <a href="https://dashdash-tau.vercel.app"><strong>Live Application</strong></a>
     ·
@@ -119,10 +119,9 @@ tbh rumv kf,uc  →  אני רוצה לכתוב
 - Pin notes to the front of the tab row, duplicate the selected note, copy a phone number, undo the most recent tab closure, and use Ctrl+N while focused inside Notes.
 - Existing scratchpad text is copied into tabs on first use (legacy data is retained).
 
-### Backup, restore and shortcuts
+### Backup and restore
 
 - **גיבוי ושחזור** in the toolbar exports a user-initiated JSON backup of local DashDash data (including notes, commands, shortcuts, drawing instances, timer history, layouts, and widget settings). Import validates the file and requires confirmation before replacing matching local keys. The original backup is never uploaded to a server.
-- **Quick Shortcuts** is a draggable widget for user-defined HTTP/HTTPS website links. Only explicit clicks open links, in a new tab. Browsers cannot directly launch arbitrary Windows programs or local folders as Pocket can.
 - Browser storage is per origin; production and test previews maintain separate copies. Backups are unencrypted and may include sensitive data.
 
 ### Network tools
@@ -133,11 +132,10 @@ tbh rumv kf,uc  →  אני רוצה לכתוב
 - Recent and favorite targets can be reselected without scanning. Results can be copied and display common TCP service names; MAC results also export as CSV.
 - The port-check server still enforces public IPv4-only targets and at most 16 TCP ports per request.
 
-### Pocket-inspired utilities
+### Subnet Calculator
 
-- **Subnet Calculator:** offline IPv4/CIDR network, broadcast, masks, wildcard, address range and usable-host counts.
-- **Commands Helper:** a private, browser-local CLI reference with search, Cisco/Fortinet/Check Point filtering, favorites, edit, copy, JSON import (up to 1000 entries, including Pocket's `{ schema, commands, machines }` exports) and manual backup export. Imported machine and topic metadata is retained. Supports validated `{{IP}}` and `{{VLAN}}` placeholders filled before copying; never executes commands. Commands are never executed or sent to a server.
-- Both utilities are available from **＋ הוספה** on existing dashboards; they appear by default on fresh desktop layouts.
+- Offline IPv4/CIDR network, broadcast, masks, wildcard, address range and usable-host counts.
+- Available from **＋ הוספה**. Commands Helper and Quick Shortcuts were retired from the dashboard UI; prior local data is not automatically deleted.
 
 ### Drawing Board
 
