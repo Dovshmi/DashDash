@@ -79,6 +79,31 @@ describe('dashboard layout helpers', () => {
     expect(createDefaultDashboardLayout(['timer', 'notes', 'drawing'], templates)).toEqual(templates.slice(0, 3));
   });
 
+  it('drops retired Commands Helper and Quick Shortcuts from saved desktop and mobile layouts', () => {
+    const supported = ['timer', 'translate', 'notes', 'drawing', 'subnet', 'mac', 'ports', 'schedule'];
+    const savedIds = ['timer', 'commands', 'notes', 'shortcuts', 'schedule', 'mac'];
+    const active = normalizeWidgetIds(savedIds, supported);
+    expect(active).toEqual(['timer', 'notes', 'schedule', 'mac']);
+    const templates = [
+      { i: 'timer', x: 0, y: 0, w: 6, h: 11 },
+      { i: 'notes', x: 0, y: 11, w: 6, h: 14 },
+      { i: 'mac', x: 6, y: 25, w: 6, h: 12 },
+      { i: 'schedule', x: 0, y: 38, w: 12, h: 18 },
+    ];
+    const savedLayout = [
+      { i: 'timer', x: 3, y: 0, w: 6, h: 11 },
+      { i: 'commands', x: 0, y: 25, w: 6, h: 15 },
+      { i: 'shortcuts', x: 0, y: 55, w: 6, h: 12 },
+      { i: 'schedule', x: 0, y: 60, w: 12, h: 18 },
+    ];
+    const restored = normalizeDashboardLayout(savedLayout, templates, active);
+    expect(restored.map((item) => item.i)).toEqual(['timer', 'notes', 'mac', 'schedule']);
+    expect(restored.find((item) => item.i === 'timer')?.x).toBe(3);
+    expect(restored.find((item) => item.i === 'schedule')?.y).toBe(60);
+    expect(normalizeWidgetIds(['timer', 'shortcuts', 'commands', 'drawing'], supported))
+      .toEqual(['timer', 'drawing']);
+  });
+
   it('keeps only known widget ids and allows unique instances of repeatable tools', () => {
     expect(normalizeWidgetIds(['timer', 'notes:one', 'unknown', 'notes:one', 'drawing:two'], ['translate', 'timer', 'notes', 'drawing']))
       .toEqual(['timer', 'notes:one', 'drawing:two']);
