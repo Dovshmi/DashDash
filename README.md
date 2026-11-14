@@ -62,6 +62,17 @@ The interface is written for Hebrew users with full RTL behavior, while technica
 - **Per-widget locking** that freezes the current position and size.
 - **Dashboard reset** for restoring the default layout.
 
+### Work Schedule and Shift Notes (Excel + optional PDF)
+
+- Open **＋ הוספה → סידור עבודה ומשימות** to add the full-width, resizable Shift Center widget.
+- Import a regular unencrypted **.xlsx** workbook to view every non-empty row from every worksheet. PDF is **optional**; Excel works independently.
+- Automatically detect rows organized by employee/team manager or days-as-columns. Select a sheet, filter employee/team manager/day, search across content, or manually map worksheet columns.
+- Switch to the **raw cells** view whenever automatic classification looks uncertain. Excel formatting and certain highlighted cell colors are preserved; formulas with no saved result are explicitly flagged.
+- Optionally import the Outlook email as **.pdf** to search its full extractable text, filter by page or subject (instructions, training, planned operations, duties, absences), and open the original PDF for verification.
+- The interface warns about mismatched week numbers and PDF pages with no readable text. **PDF tables may reorder text**, so always confirm critical assignments against the original document.
+- Processing is client-side only. Workbook/PDF contents are not sent to DashDash's Vercel API and are not added to localStorage or dashboard backups. Closing/reloading the tab discards the imported contents.
+- Microsoft Purview/MIP-encrypted corporate XLSX files (e.g. with an `MSMAMARPCRYPT` header) cannot be read: only a permitted unencrypted export can be imported. The tool never bypasses organizational protection.
+
 ### Configurable Personal Timer
 
 - Default presets:
