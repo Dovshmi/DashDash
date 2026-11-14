@@ -132,7 +132,10 @@ function readStyles(files) {
     const fill = fills[Number(xf.getAttribute('fillId'))];
     const fg = fill?.getElementsByTagName('fgColor')[0];
     const rgb = fg?.getAttribute('rgb');
+    const indexed = fg?.getAttribute('indexed');
+    const indexedColors = { 2: '#ff0000', 3: '#00ff00', 4: '#0000ff', 5: '#ffff00', 6: '#ff00ff', 7: '#00ffff' };
     if (rgb && /^[\da-f]{8}$/i.test(rgb)) colors.set(i, '#' + rgb.slice(2));
+    else if (indexed !== null && indexed !== undefined && indexedColors[Number(indexed)]) colors.set(i, indexedColors[Number(indexed)]);
   });
   return { formats, colors };
 }
@@ -145,7 +148,10 @@ function getCellValue(cell, shared, style, date1904) {
   if (type === 'b') return raw === '1' ? 'כן' : 'לא';
   if (type === 'e') return 'שגיאה: ' + String(raw || '');
   if (type === 'str') return cleanText(raw);
-  if (raw == null) return cleanText(nodeText(cell, 't'));
+  if (raw == null) {
+    const formula = cell.getElementsByTagName('f')[0]?.textContent;
+    return formula ? '[נוסחה ללא ערך מחושב: ' + formula + ']' : cleanText(nodeText(cell, 't'));
+  }
   if (!isNaN(Number(raw))) return formatExcelNumber(Number(raw), style, date1904);
   return cleanText(raw);
 }
