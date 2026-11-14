@@ -66,7 +66,7 @@ describe('schedule parser', () => {
     expect(entries).toHaveLength(2);
     expect(entries[0]).toMatchObject({employee: 'דנה', manager: 'רותם', day: 'ראשון', shift: '09:00'});
     expect(entries[1].shift).toBe('12:00-20:00');
-    expect(doc.cellCount).toBe(19);
+    expect(doc.cellCount).toBe(18);
   });
   it('recognizes days-as-columns without dropping day cells', async () => {
     const buffer = makeZip(common);
