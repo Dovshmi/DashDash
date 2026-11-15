@@ -2,11 +2,12 @@ import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { cleanText } from './work-schedule-parser.js';
 import { buildScheduleGrid, filterScheduleGridRows, readableTextOnColor, scheduleCellKind } from './schedule-grid.js';
+import { activitiesForCell } from './schedule-mail-parser.js';
 
 const STEP = 120;
 const distinct = (values) => [...new Set(values.map(cleanText).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'he'));
 
-export default function ScheduleWeekGrid({ sheet, mapping, query, setQuery }) {
+export default function ScheduleWeekGrid({ sheet, mapping, query, setQuery, mail, mailWeek }) {
   const grid = useMemo(() => buildScheduleGrid(sheet, mapping), [sheet, JSON.stringify(mapping)]);
   const [manager, setManager] = useState('');
   const [employee, setEmployee] = useState('');
@@ -14,7 +15,8 @@ export default function ScheduleWeekGrid({ sheet, mapping, query, setQuery }) {
   const [day, setDay] = useState('');
   const [expanded, setExpanded] = useState(false);
   const [visible, setVisible] = useState(STEP);
-  useEffect(() => { setManager(''); setEmployee(''); setRole(''); setDay(''); setVisible(STEP); }, [sheet]);
+  const [selected, setSelected] = useState(null);
+  useEffect(() => { setManager(''); setEmployee(''); setRole(''); setDay(''); setVisible(STEP); setSelected(null); }, [sheet]);
   useEffect(() => {
     if (!expanded) return undefined;
     const previous = document.body.style.overflow;
@@ -24,6 +26,12 @@ export default function ScheduleWeekGrid({ sheet, mapping, query, setQuery }) {
     return () => { document.body.style.overflow = previous; document.removeEventListener('keydown', onKeyDown); };
   }, [expanded]);
 
+  useEffect(() => {
+    if (!selected) return undefined;
+    const handler=(event) => { if(event.key==='Escape')setSelected(null); };
+    document.addEventListener('keydown',handler);
+    return ()=>document.removeEventListener('keydown',handler);
+  },[selected]);
   const filtered = useMemo(() => filterScheduleGridRows(grid?.rows || [], { manager, employee, role, query }), [grid, manager, employee, role, query]);
   if (!grid) return null;
 
@@ -44,6 +52,11 @@ export default function ScheduleWeekGrid({ sheet, mapping, query, setQuery }) {
   });
   const tableWidth = 42 + columns.reduce((sum, col) => sum + col.width, 0);
   const shown = filtered.slice(0, visible);
+  const selectedRow = selected ? grid.rows.find((r) => r.number === selected.rowNumber) : null;
+  const selectedColumn = selected ? grid.columns.find((c) => c.index === selected.columnIndex) : null;
+  const selectedDay = selectedColumn?.day ? ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'].indexOf(selectedColumn.day) : -1;
+  const details = selectedRow && selectedDay >= 0 ?
+    activitiesForCell(mail,selectedRow.employee,selectedDay,mailWeek?.state) : null;
 
   const toolbar = <div className="schedule-week-toolbar" dir="rtl">
     {managerOptions.length > 0 && <label>מנהל צוות<select value={manager} onChange={(event) => { setManager(event.target.value); setVisible(STEP); }}><option value="">כל המנהלים</option>{managerOptions.map((value) => <option key={value} value={value}>{value}</option>)}</select></label>}
@@ -72,7 +85,12 @@ export default function ScheduleWeekGrid({ sheet, mapping, query, setQuery }) {
                 ...(column.pinned != null ? { '--pin-right': column.pinned + 'px' } : {}),
                 ...(bg ? { backgroundColor: bg, color: readableTextOnColor(bg) } : {}),
               };
-              return <td key={column.index} title={value || undefined} className={['schedule-week-cell', 'schedule-week-cell-' + kind, column.pinned != null ? 'schedule-week-pinned' : '', column.field === 'employee' ? 'schedule-week-employee' : ''].join(' ')} style={style}><span dir="auto">{value || '—'}</span></td>;
+              const count = column.day && mail && mailWeek?.state !== 'mismatch' ? activitiesForCell(mail,row.employee,['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'].indexOf(column.day),mailWeek?.state).personal.length : 0;
+              return <td key={column.index} title={value || undefined} className={['schedule-week-cell', 'schedule-week-cell-' + kind, column.pinned != null ? 'schedule-week-pinned' : '', column.field === 'employee' ? 'schedule-week-employee' : ''].join(' ')} style={style}>
+                {column.day ? <button type="button" className="schedule-week-day-button" title={'פרטי יום '+column.header+' עבור '+(row.employee||'העובד')} onClick={()=>setSelected({rowNumber:row.number,columnIndex:column.index})}>
+                  <span dir="auto">{value || '—'}</span>{count>0 && <span className="schedule-week-activity-count" aria-label={count+' פעילויות אישיות'}>{count}</span>}
+                </button> : <span dir="auto">{value || '—'}</span>}
+              </td>;
             })}
           </tr>)}
         </tbody>
@@ -97,5 +115,38 @@ export default function ScheduleWeekGrid({ sheet, mapping, query, setQuery }) {
         {table}
       </section>
     </div>, document.body)}
+    {selectedRow && selectedColumn && selectedDay >= 0 && createPortal(<div className="schedule-cell-overlay" role="presentation" onMouseDown={(event)=>{if(event.target===event.currentTarget)setSelected(null);}}>
+      <section className="schedule-cell-dialog" role="dialog" aria-modal="true" aria-label={'פרטי משמרת '+(selectedRow.employee||'עובד')} dir="rtl">
+        <header className="schedule-cell-dialog-head">
+          <div><p className="schedule-cell-eyebrow">SHIFT CENTER · פירוט יום ושבוע</p><h2>{selectedRow.employee || 'עובד לא מזוהה'} · {selectedColumn.header}</h2><small>{selectedRow.role || 'תפקיד לא צוין'} · מנהל צוות: {selectedRow.manager || 'לא צוין'}</small></div>
+          <button type="button" onClick={()=>setSelected(null)} autoFocus aria-label="סגור פירוט משמרת">✕ סגור</button>
+        </header>
+        <div className="schedule-cell-content">
+          <div className="schedule-cell-shift"><span>המשמרת לפי Excel</span><strong dir="auto">{selectedRow.cells[selectedColumn.index] || 'לא שובץ'}</strong></div>
+          {mailWeek?.state==='mismatch' && <p className="schedule-warning">⚠ {mailWeek.message} לא נציג משימות משבוע אחר.</p>}
+          {mailWeek?.state==='unverified' && <p className="schedule-warning">⚠ {mailWeek.message}</p>}
+          {!mail && <p className="schedule-cell-empty">עדיין לא צורף מייל. ניתן לטעון PDF, HTML/HTM או להדביק הודעה מהלוח כדי להציג כאן הדרכות, משימות ותורנויות.</p>}
+          {mail && <section className="schedule-cell-events">
+            <h3>הפעילויות המשויכות לעובד ביום הזה ({details.personal.length})</h3>
+            {details.personal.length ? details.personal.map((event)=><article key={event.id} className="schedule-cell-event">
+              <div className="schedule-cell-event-top"><b>{event.title}</b><span>{event.time || 'ללא שעה מוגדרת'}</span></div>
+              <small>{event.category} · {event.source}</small>
+              {event.location && <p>מיקום / הקשר: {event.location}</p>}
+              {event.details && <p>{event.details}</p>}
+              {event.peopleText && event.peopleText !== event.details && <p>משתתפים / שיבוץ: {event.peopleText}</p>}
+            </article>) : <p className="schedule-cell-empty">לא נמצאה פעילות שמזכירה במפורש את השם המלא של העובד ביום זה. ייתכנו פעילויות שלא פורטו בשמות או שלא זוהו בטקסט.</p>}
+            {details.dayGeneral.length>0 && <div className="schedule-cell-subsection"><h3>פעילויות כלליות ביום הזה</h3>{details.dayGeneral.map((event)=><p key={event.id}>{event.time ? event.time+' · ' : ''}{event.title}</p>)}</div>}
+            <details className="schedule-cell-more"><summary>כל יתר הפעילויות ביום הזה ({details.otherDay.length}) — לא משויכות לעובד</summary>
+              {details.otherDay.map((event)=><p key={event.id}><b>{event.time || 'ללא שעה'}</b> · {event.title}{event.details ? ' · '+event.details : ''}{event.peopleText && event.peopleText !== event.details ? ' · '+event.peopleText : ''}</p>)}
+            </details>
+            <div className="schedule-cell-subsection"><h3>כל השיבוצים שזוהו לעובד השבוע ({details.weekly.length})</h3>
+              {details.weekly.length ? details.weekly.map((event)=><p key={event.id}><b>{event.dayLabel}</b> · {event.time || 'שעה לא צוינה'} · {event.title}</p>) : <p>לא נמצאו שיבוצים אישיים נוספים.</p>}
+            </div>
+            {details.notices.length>0 && <div className="schedule-cell-subsection"><h3>הודעות חשובות לכל העובדים</h3>{details.notices.map((notice,index)=><p key={index}>{notice}</p>)}</div>}
+            <small className="schedule-cell-disclaimer">שיוך אישי מבוצע רק כאשר השם המלא מופיע במייל. תפקידים קבוצתיים, ראשי תיבות או שמות פרטיים בלבד אינם נחשבים לשיוך ודאי.</small>
+          </section>}
+        </div>
+      </section>
+    </div>,document.body)}
   </>;
 }

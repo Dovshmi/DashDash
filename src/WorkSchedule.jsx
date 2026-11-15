@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { cleanText, columnName, findWeekMismatch, getScheduleEntries, guessMapping, pdfLinesFromItems, PDF_CATEGORIES, readScheduleExcel, weekFromText } from './work-schedule-parser.js';
 import { readScheduleClipboard } from './schedule-clipboard.js';
 import ScheduleWeekGrid from './ScheduleWeekGrid.jsx';
+import { decodeMailHtml, matchScheduleWeek, parseScheduleMail } from './schedule-mail-parser.js';
 import './work-schedule.css';
 
 const MAX_VISIBLE = 120;
@@ -53,6 +54,9 @@ async function readPdf(file, progress) {
 export default function WorkSchedule() {
   const [excel, setExcel] = useState(null);
   const [pdf, setPdf] = useState(null);
+  const [mail, setMail] = useState(null);
+  const [showMailPaste, setShowMailPaste] = useState(false);
+  const [mailPasteText, setMailPasteText] = useState('');
   const [pdfUrl, setPdfUrl] = useState('');
   const urlRef = useRef('');
   const requestRef = useRef(0);
@@ -101,11 +105,12 @@ export default function WorkSchedule() {
     (pdfCategory === 'הכול' || line.category === pdfCategory) &&
     match(line.text, query)
   ), [pdf, pdfPage, pdfCategory, query]);
-  const mismatch = findWeekMismatch(excel?.week, pdf?.week);
+  const mailWeek = matchScheduleWeek(excel,mail,sheet);
   const unsure = sheet && mapping.type === 'raw';
   const dayOptions = useMemo(() => unique(entries.map((r) => r.day)).slice(0, 500), [entries]);
   useEffect(() => () => { if (urlRef.current) URL.revokeObjectURL(urlRef.current); }, []);
   const hasPdf = Boolean(pdf || pdfUrl);
+  const hasMail = Boolean(mail || hasPdf);
 
   function showExcelResult(result) {
     setExcel(result); setSheetName(result.sheets[0].name);
@@ -152,8 +157,76 @@ export default function WorkSchedule() {
     urlRef.current = '';
     setPdfUrl(''); setPdf(null); setPdfError(''); setShowPdfPreview(false); setLoadingPdf(false);
   }
+  function clearMail() {
+    clearPdf(); setMail(null); setMailPasteText(''); setShowMailPaste(false); setPdfError('');
+  }
+  function setMailFromText(text, format, filename) {
+    const parsed = parseScheduleMail(text, {format,filename});
+    setMail(parsed); setPdfError('');setMailPasteText('');setShowMailPaste(false);
+    setStatus('נמצאו ' + parsed.events.length + ' פעילויות ותורנויות במייל. לחצו על משמרת בטבלה כדי להציג מידע רלוונטי.');
+    return parsed;
+  }
+  async function uploadMail(file) {
+    if (/\.pdf$/i.test(file.name)) return uploadPdf(file);
+    clearMail();
+    const request = requestRef.current;
+    setLoadingPdf(true);setPdfError('');setStatus('');
+    try {
+      if(!/\.html?$/i.test(file.name)) throw new Error('אפשר להעלות PDF, HTML או HTM בלבד.');
+      const content = decodeMailHtml(await file.arrayBuffer());
+      if(request !== requestRef.current)return;
+      setMailFromText(content, 'html', file.name);
+    } catch(error) { if(request === requestRef.current)setPdfError(error?.message || 'לא הצלחנו לקרוא את קובץ המייל.'); }
+    finally { if(request === requestRef.current)setLoadingPdf(false); }
+  }
+  function pasteMailText(text, format = 'text') {
+    setPdfError('');setStatus('');
+    try {
+      const next = parseScheduleMail(text,{format,filename:'מייל מהלוח'});
+      if(!next.events.length && !next.notices.length && !next.week)throw new Error('לא זוהה תוכן של סידור עבודה במייל. בחר את גוף ההודעה והעתק אותו מחדש.');
+      clearPdf();
+      setMail(next);setMailPasteText('');setShowMailPaste(false);
+      setStatus('נמצאו ' + next.events.length + ' פעילויות במייל. הנתונים נוספו לתצוגת המשמרות ללא שינוי סידור האקסל.');
+    } catch(error) { setShowMailPaste(true);setPdfError(error?.message || 'הדבקת המייל נכשלה.'); }
+  }
+  async function pasteMailFromClipboard() {
+    setPdfError('');
+    try {
+      if (navigator.clipboard?.read) {
+        const items=await navigator.clipboard.read();
+        let html='',text='';
+        for(const item of items) {
+          if(!html && item.types.includes('text/html'))html=await (await item.getType('text/html')).text();
+          if(!text && item.types.includes('text/plain'))text=await (await item.getType('text/plain')).text();
+        }
+        if(html) {
+          const parsed=parseScheduleMail(html,{format:'html',filename:'מייל מהלוח'});
+          if(parsed.events.length){pasteMailText(html,'html');return;}
+        }
+        if(text){pasteMailText(text);return;}
+      }
+      if(navigator.clipboard?.readText) {
+        const text=await navigator.clipboard.readText();
+        pasteMailText(text);return;
+      }
+      throw new Error('לא ניתן לקרוא את הלוח.');
+    } catch {
+      setShowMailPaste(true);
+      setPdfError('קריאת הלוח נחסמה. ניתן להדביק ידנית באמצעות Ctrl+V בתיבה.');
+    }
+  }
+  function pasteMailFromEvent(event) {
+    const html=event.clipboardData?.getData('text/html')||'';
+    if(html) {
+      try {
+        if(parseScheduleMail(html,{format:'html'}).events.length) {
+          event.preventDefault();pasteMailText(html,'html');return;
+        }
+      } catch { /* Fall back to plain-text paste. */ }
+    }
+  }
   async function uploadPdf(file) {
-    clearPdf();
+    clearMail();
     const request = requestRef.current;
     setPdfError(''); setLoadingPdf(true);
     if (!/\.pdf$/i.test(file.name)) { setPdfError('יש לבחור קובץ PDF.'); setLoadingPdf(false); return; }
@@ -164,6 +237,7 @@ export default function WorkSchedule() {
       const result = await readPdf(file, (n, total) => { if (request === requestRef.current) setStatus('מנתח PDF: עמוד ' + n + ' מתוך ' + total); });
       if (request !== requestRef.current) return;
       setPdf(result);
+      setMailFromText(result.lines.map((line) => line.text).join('\n'), 'pdf', file.name);
       setPdfCategory('הכול'); setPdfPage(0); setVisiblePdf(MAX_VISIBLE);
       setStatus('נטענו ' + result.pages.length + ' עמודי PDF. ניתן לחפש בכל התוכן או לפתוח את המקור.');
     } catch (error) { if (request === requestRef.current) setPdfError(error?.message || 'ניתוח ה-PDF נכשל; אפשר עדיין לפתוח את קובץ המקור.'); }
@@ -184,7 +258,7 @@ export default function WorkSchedule() {
 
   return <section className="card schedule-card">
     <div className="card-heading drag-handle"><div><p className="eyebrow">SHIFT CENTER</p><h2>סידור עבודה ומשימות</h2></div></div>
-    <p className="schedule-intro">אפשר להעלות XLSX או להדביק טבלת משמרות שהועתקה מ-Excel. בנוסף ניתן לצרף PDF של המייל להנחיות, הדרכות ועבודות יזומות (אופציונלי).</p>
+    <p className="schedule-intro">אפשר להעלות או להדביק סידור Excel. ניתן להוסיף גם PDF, קובץ HTML/HTM או תוכן מייל מהלוח כדי להציג משימות, הדרכות ותורנויות בלחיצה על משמרת. הוספת המייל אינה חובה.</p>
     <div className="schedule-imports">
       <FileDrop title="סידור Excel" hint="XLSX או הדבקה מהלוח" icon="▦" required accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" filename={excel?.filename} onFile={uploadExcel} onClear={clearExcel}>
         <div className="schedule-paste-actions">
@@ -197,17 +271,28 @@ export default function WorkSchedule() {
           <button type="button" className="schedule-file-button" disabled={!pasteText.trim()} onClick={() => loadClipboardTable(pasteText)}>ייבא את הטבלה שהודבקה</button>
         </div>}
       </FileDrop>
-      <FileDrop title="מייל / PDF" hint="PDF · אופציונלי" icon="▤" accept=".pdf,application/pdf" filename={pdf?.name || (pdfUrl ? 'PDF נטען' : '')} onFile={uploadPdf} onClear={clearPdf} />
+      <FileDrop title="מייל · PDF / HTML" hint="PDF, HTML, HTM · אופציונלי" icon="▤" accept=".pdf,.html,.htm,application/pdf,text/html" filename={mail?.filename || pdf?.name || (pdfUrl ? 'PDF נטען' : '')} onFile={uploadMail} onClear={clearMail}>
+        <div className="schedule-paste-actions">
+          <button type="button" className="schedule-file-button" onClick={pasteMailFromClipboard}>📋 הוסף מידע מהמייל מהלוח</button>
+          <button type="button" className="schedule-paste-toggle" onClick={() => {setShowMailPaste((v)=>!v);setPdfError('');}}>{showMailPaste ? 'סגור' : 'הדבקה ידנית (Ctrl+V)'}</button>
+        </div>
+        <small className="schedule-help">להצגת תורנויות מלאה מומלץ להעלות HTML/HTM של הודעת המייל. בעת העתקה יש לבחור את תוכן ההודעה בלבד.</small>
+        {showMailPaste && <div className="schedule-paste-manual">
+          <textarea aria-label="הדבק כאן תוכן מייל" dir="auto" rows={5} value={mailPasteText} onChange={(event)=>setMailPasteText(event.target.value)} onPaste={pasteMailFromEvent} placeholder="הדבק כאן את גוף המייל באמצעות Ctrl+V..." />
+          <button type="button" className="schedule-file-button" disabled={!mailPasteText.trim()} onClick={()=>pasteMailText(mailPasteText)}>נתח והוסף את המייל לטבלה</button>
+        </div>}
+      </FileDrop>
     </div>
     <p className="schedule-local">🔒 העיבוד מתבצע בדפדפן בלבד. הקבצים ותוכן הלוח אינם נשלחים לשרת ואינם נשמרים בהיסטוריית DashDash. הדבקה אפשרית רק אם מדיניות הארגון מתירה העתקה.</p>
     {(loadingExcel || loadingPdf) && <p className="schedule-status" role="status">מעבד קובץ… {status}</p>}
     {excelError && <p className="schedule-error" role="alert">{excelError}</p>}
     {pdfError && <p className="schedule-error" role="alert">{pdfError}</p>}
-    {mismatch && <p className="schedule-warning" role="alert">⚠ {mismatch} מומלץ לא לשייך אירועים מה-PDF למשמרות עד לווידוא.</p>}
+    {excel && mail && mailWeek.state === 'mismatch' && <p className="schedule-warning" role="alert">⚠ {mailWeek.message}</p>}
+    {excel && mail && mailWeek.state === 'unverified' && <p className="schedule-warning" role="status">⚠ {mailWeek.message}</p>}
     {excel?.unresolvedFormulas > 0 && <p className="schedule-warning" role="alert">⚠ {excel.unresolvedFormulas} תאים מכילים נוסחה ללא תוצאה שמורה בקובץ. חובה לבדוק את ערכם באקסל המקורי.</p>}
     {status && !loadingExcel && !loadingPdf && <p className="schedule-status" role="status">{status}</p>}
 
-    {(excel || hasPdf) && <div className="schedule-search-line">
+    {(excel || hasMail) && <div className="schedule-search-line">
       <label>חיפוש בכל הקבצים <input type="search" value={query} onChange={(e) => { setQuery(e.target.value); setVisibleExcel(MAX_VISIBLE); setVisiblePdf(MAX_VISIBLE); }} placeholder="שם עובד, משמרת, לקוח או משימה" /></label>
       {query && <button type="button" className="secondary-button" onClick={() => setQuery('')}>נקה חיפוש</button>}
     </div>}
@@ -226,7 +311,7 @@ export default function WorkSchedule() {
           {['employee', 'manager', 'day', 'shift'].map((field) => <label key={field}>{({employee:'עובד',manager:'מנהל צוות',day:'יום / תאריך',shift:'שעות / משמרת'})[field]}<select value={customMapping[field] ?? (guessedMapping.type === 'table' ? String(guessedMapping[field] ?? '') : '')} onChange={(e) => updateMapping(field, e.target.value)}><option value="">לא קיים</option>{Array.from({length:cols},(_,i) => <option value={String(i)} key={i}>{columnName(i)}</option>)}</select></label>)}
         </div>}
       </div>}
-      {displayView === 'week' && <ScheduleWeekGrid sheet={sheet} mapping={mapping} query={query} setQuery={setQuery} />}
+      {displayView === 'week' && <ScheduleWeekGrid sheet={sheet} mapping={mapping} query={query} setQuery={setQuery} mail={mail} mailWeek={mailWeek} />}
       {displayView === 'interpreted' && <>
         {(employeeOptions.length > 0 || managerOptions.length > 0 || dayOptions.length > 0) && <div className="schedule-filter-row">
           {employeeOptions.length > 0 && <label>עובד<select value={employee} onChange={(e) => { setEmployee(e.target.value); setVisibleExcel(MAX_VISIBLE); }}><option value="">כל העובדים</option>{employeeOptions.map((value) => <option key={value}>{value}</option>)}</select></label>}
@@ -250,6 +335,16 @@ export default function WorkSchedule() {
       </>}
     </div>}
 
+    {mail && <div className="schedule-section schedule-mail-section" dir="rtl">
+      <div className="schedule-section-head"><h3>אירועים, משימות והנחיות מהמייל</h3><small>{mail.events.length} פעילויות · {mail.week ? 'שבוע ' + mail.week : 'שבוע לא מזוהה'} · {mail.format.toUpperCase()}</small></div>
+      <p className="schedule-note">המידע נוסף ליד סידור האקסל, ולא משנה את שעות המשמרות. כדי לראות שיבוצים הקשורים לעובד מסוים, לחצו על התא של העובד ביום המתאים.</p>
+      {mail.notices.length>0 && <div className="schedule-mail-notices"><strong>הודעות כלליות</strong>{mail.notices.map((notice,i)=><p key={i}>{notice}</p>)}</div>}
+      {mail.warnings.map((warning,i)=><p key={i} className="schedule-warning">⚠ {warning}</p>)}
+      <details className="schedule-mail-details"><summary>כל הפעילויות שזוהו ({mail.events.length})</summary>
+        <div className="schedule-mail-activity-list">{mail.events.filter((event)=>match([event.title,event.peopleText,event.details,event.category].join(' '),query)).slice(0,650).map((event)=><div className="schedule-mail-activity" key={event.id}><b>{event.dayLabel} · {event.time || 'שעה לא צוינה'} · {event.category}</b><div>{event.title}</div><small>{event.peopleText || event.details || ''}</small></div>)}</div>
+      </details>
+      <details className="schedule-mail-details"><summary>הצג את הטקסט המקורי לחיפוש ולאימות</summary><pre className="schedule-mail-raw">{mail.rawText}</pre></details>
+    </div>}
     {(pdf || pdfUrl) && <div className="schedule-section">
       <div className="schedule-section-head"><h3>משימות, אירועים והנחיות · PDF</h3><small>{pdf?.pages.length || '…'} עמודים</small></div>
       <p className="schedule-note">זיהוי אוטומטי של נושאים אינו תחליף לעיון במקור: טבלאות PDF מורכבות עלולות להיקרא בסדר שונה. כל שורת טקסט שזוהתה זמינה כאן, וגם ה-PDF המקורי.</p>
@@ -267,6 +362,6 @@ export default function WorkSchedule() {
         {filteredPdf.length > visiblePdf && <button type="button" className="schedule-more" onClick={()=>setVisiblePdf((n)=>n+MAX_VISIBLE)}>הצג עוד {Math.min(MAX_VISIBLE,filteredPdf.length-visiblePdf)} שורות</button>}
       </>}
     </div>}
-    {!excel && !hasPdf && <p className="schedule-empty">אפשר להדביק טבלת Excel מהלוח או להעלות קובץ XLSX. אפשר להוסיף PDF של המייל בהמשך, אם יש.</p>}
+    {!excel && !hasMail && <p className="schedule-empty">אפשר להדביק טבלת Excel מהלוח או להעלות קובץ XLSX. ניתן להוסיף PDF, HTML או טקסט מהמייל באופן אופציונלי.</p>}
   </section>;
 }
