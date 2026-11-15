@@ -90,10 +90,18 @@ export async function pinnedDestination(url) {
     if (!publicIp(host)) throw new Error('Private or reserved IP targets are blocked.');
     return host;
   }
-  const addresses = await Promise.race([
-    lookup(host, {all:true, verbatim:true}),
-    new Promise((_,reject)=>setTimeout(()=>reject(new Error('DNS lookup timed out.')),4000))
-  ]);
+  let timeoutId;
+  let addresses;
+  try {
+    addresses = await Promise.race([
+      lookup(host, {all:true, verbatim:true}),
+      new Promise((_,reject)=>{
+        timeoutId = setTimeout(()=>reject(new Error('DNS lookup timed out.')),4000);
+      })
+    ]);
+  } finally {
+    clearTimeout(timeoutId);
+  }
   if (!addresses.length || addresses.some(item=>!publicIp(item.address))) {
     throw new Error('Target DNS did not resolve exclusively to public IP addresses.');
   }
