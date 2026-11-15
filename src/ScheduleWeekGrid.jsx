@@ -3,6 +3,8 @@ import { createPortal } from 'react-dom';
 import { cleanText } from './work-schedule-parser.js';
 import { buildScheduleGrid, filterScheduleGridRows, readableTextOnColor, scheduleCellKind } from './schedule-grid.js';
 import { activitiesForCell } from './schedule-mail-parser.js';
+import { buildShiftHoverPreview, placeShiftHover } from './schedule-hover.js';
+import ShiftDayHover from './ShiftDayHover.jsx';
 
 const STEP = 120;
 const distinct = (values) => [...new Set(values.map(cleanText).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'he'));
@@ -16,7 +18,19 @@ export default function ScheduleWeekGrid({ sheet, mapping, query, setQuery, mail
   const [expanded, setExpanded] = useState(false);
   const [visible, setVisible] = useState(STEP);
   const [selected, setSelected] = useState(null);
-  useEffect(() => { setManager(''); setEmployee(''); setRole(''); setDay(''); setVisible(STEP); setSelected(null); }, [sheet]);
+  const [hovered, setHovered] = useState(null);
+  useEffect(() => { setManager(''); setEmployee(''); setRole(''); setDay(''); setVisible(STEP); setSelected(null); setHovered(null); }, [sheet]);
+  useEffect(() => { setHovered(null); }, [sheet, mail, expanded, manager, employee, role, day, query]);
+  useEffect(() => {
+    if (!hovered) return undefined;
+    const dismiss = () => setHovered(null);
+    window.addEventListener('scroll', dismiss, true);
+    window.addEventListener('resize', dismiss);
+    return () => {
+      window.removeEventListener('scroll', dismiss, true);
+      window.removeEventListener('resize', dismiss);
+    };
+  }, [hovered]);
   useEffect(() => {
     if (!expanded) return undefined;
     const previous = document.body.style.overflow;
@@ -58,6 +72,22 @@ export default function ScheduleWeekGrid({ sheet, mapping, query, setQuery, mail
   const details = selectedRow && selectedDay >= 0 ?
     activitiesForCell(mail,selectedRow.employee,selectedDay,mailWeek?.state) : null;
 
+  function showHover(event, row, column) {
+    if (!column.day || selected) return;
+    const weekday = ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'].indexOf(column.day);
+    if (weekday < 0) return;
+    const preview = buildShiftHoverPreview({
+      mail, mailWeek, employee: row.employee, day: weekday,
+      dayLabel: column.header, shift: row.cells[column.index] || '',
+    });
+    const rect = event.currentTarget.getBoundingClientRect();
+    const placement = placeShiftHover(rect, {width:window.innerWidth,height:window.innerHeight}, preview.entries.length, preview.overflow);
+    setHovered({rowNumber:row.number, columnIndex:column.index, preview, placement});
+  }
+  function hideHover(rowNumber, columnIndex) {
+    setHovered((previous) => previous?.rowNumber === rowNumber && previous.columnIndex === columnIndex ? null : previous);
+  }
+
   const toolbar = <div className="schedule-week-toolbar" dir="rtl">
     {managerOptions.length > 0 && <label>מנהל צוות<select value={manager} onChange={(event) => { setManager(event.target.value); setVisible(STEP); }}><option value="">כל המנהלים</option>{managerOptions.map((value) => <option key={value} value={value}>{value}</option>)}</select></label>}
     {roleOptions.length > 0 && <label>סקיל / תפקיד<select value={role} onChange={(event) => { setRole(event.target.value); setVisible(STEP); }}><option value="">כל התפקידים</option>{roleOptions.map((value) => <option key={value} value={value}>{value}</option>)}</select></label>}
@@ -86,8 +116,15 @@ export default function ScheduleWeekGrid({ sheet, mapping, query, setQuery, mail
                 ...(bg ? { backgroundColor: bg, color: readableTextOnColor(bg) } : {}),
               };
               const count = column.day && mail && mailWeek?.state !== 'mismatch' ? activitiesForCell(mail,row.employee,['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'].indexOf(column.day),mailWeek?.state).personal.length : 0;
-              return <td key={column.index} title={value || undefined} className={['schedule-week-cell', 'schedule-week-cell-' + kind, column.pinned != null ? 'schedule-week-pinned' : '', column.field === 'employee' ? 'schedule-week-employee' : ''].join(' ')} style={style}>
-                {column.day ? <button type="button" className="schedule-week-day-button" title={'פרטי יום '+column.header+' עבור '+(row.employee||'העובד')} onClick={()=>setSelected({rowNumber:row.number,columnIndex:column.index})}>
+              return <td key={column.index} title={!column.day ? value || undefined : undefined} className={['schedule-week-cell', 'schedule-week-cell-' + kind, column.pinned != null ? 'schedule-week-pinned' : '', column.field === 'employee' ? 'schedule-week-employee' : ''].join(' ')} style={style}>
+                {column.day ? <button type="button" className="schedule-week-day-button"
+                  aria-label={'פרטי יום '+column.header+' עבור '+(row.employee||'העובד')+' · משמרת '+(value||'לא שובץ')}
+                  aria-describedby={hovered?.rowNumber === row.number && hovered?.columnIndex === column.index ? 'schedule-shift-hover-tooltip' : undefined}
+                  onMouseEnter={(event)=>showHover(event,row,column)}
+                  onMouseLeave={()=>hideHover(row.number,column.index)}
+                  onFocus={(event)=>showHover(event,row,column)}
+                  onBlur={()=>hideHover(row.number,column.index)}
+                  onClick={()=>{setHovered(null);setSelected({rowNumber:row.number,columnIndex:column.index});}}>
                   <span dir="auto">{value || '—'}</span>{count>0 && <span className="schedule-week-activity-count" aria-label={count+' פעילויות אישיות'}>{count}</span>}
                 </button> : <span dir="auto">{value || '—'}</span>}
               </td>;
@@ -107,6 +144,7 @@ export default function ScheduleWeekGrid({ sheet, mapping, query, setQuery, mail
     </div>
     {toolbar}
     {!expanded && table}
+    {hovered && !selected && createPortal(<ShiftDayHover preview={hovered.preview} position={hovered.placement} />, document.body)}
     {expanded && createPortal(<div className="schedule-week-overlay" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setExpanded(false); }}>
       <section className="schedule-week-dialog" role="dialog" aria-modal="true" aria-label="סידור עבודה שבועי">
         <div className="schedule-week-dialog-head" dir="rtl"><div><h2>סידור עבודה שבועי</h2><small>טבלת המשמרות המלאה, כפי שהיא מסודרת באקסל</small></div><button type="button" onClick={() => setExpanded(false)} aria-label="סגור תצוגה מלאה">✕ סגור</button></div>
