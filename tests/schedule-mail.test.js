@@ -69,6 +69,21 @@ describe('optional email schedule intelligence',()=>{
     expect(parsed.rawText).toContain('מנהלי משמרת');
   });
 
+  it('recovers complete five-day duty rows from copied Gmail text but does not invent missing cells',()=>{
+    const content=[
+      'מצורף סידור עבודה לשבוע 47 – 15/11-21/11','סידור עבודה 15/11-21/11',
+      'שבוע 47','מנהלי משמרת','15-נוב','16-נוב','17-נוב','18-נוב','19-נוב',
+      'מנהל משמרת בוקר','אורן','ניצן','מירי','אורן','ניצן',
+      'מומחים','מומחה מנהל שיחות ארוכות 08:00-16:30',
+      'דנה בדיקה','נועם מדגם','שלו ישראלי','דנה בדיקה','עדי דוגמה',
+      'רמה 3','תורן בוקר - מהמוקד 08:00','דנה בדיקה','נועם מדגם', // incomplete: intentionally no five-day row
+    ].join('\n');
+    const parsed=parseScheduleMail(content);
+    expect(parsed.events.filter((e)=>e.source.includes('מבנה שורה משוער'))).toHaveLength(10);
+    expect(activitiesForCell(parsed,'דנה בדיקה',0,'matched').personal).toHaveLength(1);
+    expect(parsed.events.some((e)=>e.title.includes('תורן בוקר'))).toBe(false);
+  });
+
   it('decodes Microsoft Outlook UTF-16LE HTML with a byte order mark',()=>{
     const utf16=new Uint8Array([255,254,...[...'<html>שבוע 47</html>'].flatMap((char)=>[char.charCodeAt(0)&255,char.charCodeAt(0)>>8])]);
     expect(decodeMailHtml(utf16.buffer)).toBe('<html>שבוע 47</html>');
