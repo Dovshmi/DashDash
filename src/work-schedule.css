@@ -155,3 +155,34 @@
   .schedule-cell-content {padding:12px;}
   .schedule-cell-dialog-head {padding:13px;}
 }
+
+/* Hover summary lives in a body portal: never clipped by the scrollable table. */
+.schedule-shift-hover {
+  position:fixed;z-index:100006;pointer-events:none;box-sizing:border-box;
+  max-height:calc(100dvh - 16px);overflow:hidden;
+  background:#102035;color:#f0f6ff;border:1px solid #5b81a5;
+  border-radius:12px;box-shadow:0 12px 36px rgba(0,0,0,.48);
+  padding:11px 13px;font-size:.8rem;line-height:1.45;text-align:right;
+  overflow-wrap:anywhere;
+}
+.schedule-shift-hover-heading {display:flex;justify-content:space-between;align-items:center;gap:9px;font-size:.88rem;}
+.schedule-shift-hover-heading strong {font-weight:800;}
+.schedule-shift-hover-heading span {color:#9ed2f5;font-size:.72rem;flex-shrink:0;}
+.schedule-shift-hover-work {display:flex;justify-content:space-between;align-items:center;gap:8px;margin:8px 0 0;padding:8px 0;
+  border-top:1px solid #2c4664;border-bottom:1px solid #2c4664;color:#cfdfed;font-size:.77rem;}
+.schedule-shift-hover-work b {color:#f7e28c;font-size:.84rem;font-variant-numeric:tabular-nums;}
+.schedule-shift-hover-label {display:flex;align-items:center;justify-content:space-between;gap:7px;margin:9px 0 6px;
+  font-weight:800;color:#e6f4ff;font-size:.76rem;}
+.schedule-shift-hover-label span {font-size:.68rem;color:#97b9d5;font-weight:500;}
+.schedule-shift-hover-events {display:flex;flex-direction:column;gap:6px;}
+.schedule-shift-hover-event {display:grid;grid-template-columns:minmax(88px,auto) minmax(0,1fr);gap:9px;
+  align-items:start;padding:5px 7px;background:#1c324d;border-radius:7px;min-width:0;}
+.schedule-shift-hover-event time {direction:ltr;unicode-bidi:isolate;white-space:normal;text-align:center;
+  color:#ffd879;font-weight:800;font-size:.72rem;}
+.schedule-shift-hover-event-title {display:flex;flex-direction:column;gap:2px;min-width:0;font-size:.76rem;}
+.schedule-shift-hover-event-title > span {display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.schedule-shift-hover-event-title small {font-size:.66rem;color:#9cb5cd;}
+.schedule-shift-hover-note,.schedule-shift-hover-warning {font-size:.76rem;margin:9px 0;color:#aec4da;}
+.schedule-shift-hover-warning {color:#ffdf9b;}
+.schedule-shift-hover-more {margin:7px 0 0;font-size:.72rem;color:#b1d9f2;}
+.schedule-shift-hover-foot {margin:9px 0 0;padding-top:7px;border-top:1px solid #2c4664;font-size:.67rem;color:#9cb0c7;}
