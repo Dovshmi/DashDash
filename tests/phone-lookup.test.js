@@ -46,6 +46,8 @@ describe('Israeli phone parsing',()=>{
   it('creates only fixed external destinations and a documented direct Index URL',()=>{
     const links=externalPhoneLinks('050-123-4567');
     expect(links.index).toBe('https://theindex.co.il/phone/0501234567/');
+    expect(links.truecaller).toBe('https://www.truecaller.com/search/il/0501234567');
+    expect(externalPhoneLinks('+972501234567').truecaller).toBe(links.truecaller);
     expect(links.google).toContain('www.google.com/search?q=');
     expect(links.me).toBe('https://me.app/phone-search/');
     expect(externalPhoneLinks('garbage')).toBeNull();
