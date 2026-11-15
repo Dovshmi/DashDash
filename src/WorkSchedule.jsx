@@ -288,7 +288,7 @@ export default function WorkSchedule() {
     {excelError && <p className="schedule-error" role="alert">{excelError}</p>}
     {pdfError && <p className="schedule-error" role="alert">{pdfError}</p>}
     {excel && mail && mailWeek.state === 'mismatch' && <p className="schedule-warning" role="alert">⚠ {mailWeek.message}</p>}
-    {excel && mail && mailWeek.state === 'unverified' && <p className="schedule-warning" role="status">⚠ {mailWeek.message}</p>}}
+    {excel && mail && mailWeek.state === 'unverified' && <p className="schedule-warning" role="status">⚠ {mailWeek.message}</p>}
     {excel?.unresolvedFormulas > 0 && <p className="schedule-warning" role="alert">⚠ {excel.unresolvedFormulas} תאים מכילים נוסחה ללא תוצאה שמורה בקובץ. חובה לבדוק את ערכם באקסל המקורי.</p>}
     {status && !loadingExcel && !loadingPdf && <p className="schedule-status" role="status">{status}</p>}
 
