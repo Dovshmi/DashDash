@@ -159,12 +159,13 @@ function parseEmailTable(doc, events, range, warnings) {
     if (cells.slice(3,8).every((value)=>!value)) continue;
     for(let col=3;col<8;col++){
       const value=cells[col];
-      if(!value || !category || !role || /^ראשון$|^שני$|^שלישי$|^רביעי$|^חמישי$/.test(value))continue;
+      if(!value || !category || /^ראשון$|^שני$|^שלישי$|^רביעי$|^חמישי$/.test(value))continue;
       const offset=headers[col-3];
       if(!Number.isInteger(offset)||offset<0||offset>6)continue;
       // Skip repeated headers and explanatory rows that span the entire week.
       if(row[col]?.colspan>1 || row[col]?.originCol!==col)continue;
-      eventAdd(events,{day:offset,category:categoryFromTitle(role,category),title:category+' · '+role,
+      const title = role ? category+' · '+role : category+' · '+value.slice(0,105);
+      eventAdd(events,{day:offset,category:categoryFromTitle(title,category),title,
         details:value,peopleText:value,kind:'duty',source:'טבלאות תורנויות ומשימות'});
     }
   }
