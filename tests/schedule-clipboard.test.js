@@ -15,7 +15,8 @@ describe('Excel clipboard import', () => {
     expect(guessMapping(result.sheets[0]).type).toBe('calendar');
     const entries = getScheduleEntries(result.sheets[0]);
     expect(entries).toHaveLength(4);
-    expect(entries[0]).toMatchObject({ day: 'ראשון', shift: '08:00 - 16:30' });
+    expect(entries[0]).toMatchObject({ day: 'ראשון', employee: 'רותם', manager: 'דנה', shift: '08:00 - 16:30' });
+    expect(entries[0].text).toContain('מוקד IP');
     expect(entries[1]).toMatchObject({ day: 'שני', shift: 'Day Off' });
   });
 
