@@ -132,6 +132,16 @@ tbh rumv kf,uc  →  אני רוצה לכתוב
 - Recent and favorite targets can be reselected without scanning. Results can be copied and display common TCP service names; MAC results also export as CSV.
 - The port-check server still enforces public IPv4-only targets and at most 16 TCP ports per request.
 
+### Israeli Phone Lookup (external sources, optional free API)
+
+- Add **Phone Lookup** from **＋ הוספה**; it is opt-in and supports the normal widget grid, drag handle, resize and locking.
+- Accept Israeli mobile (05x), geographic (02/03/04/08/09) and VoIP (07x) numbers in local or +972 formats. Show both forms and provide copy actions.
+- Open documented public lookup destinations: THE INDEX number page (direct URL), Truecaller, NoCall, Me (app), and Google. Other providers may require pasting the copied number. THE INDEX currently states two free reverse name checks per visit; services may enforce their own limits.
+- For **optional inline name retrieval**, users can create their own *free* API key at https://numbers.online/developers. Enter the key only when needed. DashDash calls POST `/api/phone-lookup` using a fixed provider URL. The vendor's current free tier is 10 requests per minute and 50 per day. A caller name may be unavailable, particularly for Israeli numbers; absence of a CNAM result is never interpreted as a negative identity signal.
+- The API key is held only in the open React widget's memory and is not saved to localStorage, backups, source code, or Vercel environment variables. The server does not log or persist the key or looked-up number; it forwards the key and number to the chosen provider using HTTPS. Requests have a short timeout, bounded response size, restricted input format, and `no-store` responses.
+- Do not use unverified caller names as proof of identity, and do not enter protected or confidential work phone information without appropriate authorization. The external services receive the queried number when you initiate a lookup.
+- No scraping, unofficial Me endpoints, automatic contact uploads, client-side API key persistence, automatic searches, or database.
+
 ### Subnet Calculator
 
 - Offline IPv4/CIDR network, broadcast, masks, wildcard, address range and usable-host counts.

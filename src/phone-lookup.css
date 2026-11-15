@@ -1,0 +1,46 @@
+.phone-lookup-card { display:flex; flex-direction:column; gap:12px; min-width:0; }
+.phone-lookup-card .card-heading { margin-bottom:0; }
+.phone-intro,.phone-disclaimer,.phone-subnote,.phone-api-content p { color:#a6b7cc; font-size:.82rem; line-height:1.65; }
+.phone-field { display:flex; flex-direction:column; gap:6px; font-weight:600; color:#cbd5e1; font-size:.83rem; }
+.phone-field input { width:100%; min-width:0; border:1px solid #33465e; border-radius:10px; padding:11px 12px; background:#0b1627; color:#f1f5f9; font:inherit; font-weight:500; }
+.phone-field input:focus { outline:2px solid rgba(56,189,248,.45); border-color:#38bdf8; }
+.phone-normalized { border:1px solid rgba(125,211,252,.28); border-radius:12px; background:#102036; padding:10px 12px; display:flex; gap:12px; align-items:center; justify-content:space-between; }
+.phone-normalized > div { display:grid; gap:3px; min-width:0; }
+.phone-normalized small { color:#7dd3fc; font-size:.7rem; }
+.phone-normalized strong { font-family:'IBM Plex Mono',monospace; font-size:1rem; font-weight:600; color:#f8fafc; }
+.phone-normalized span { font-family:'IBM Plex Mono',monospace; font-size:.72rem; color:#94a3b8; }
+.phone-normalized .secondary-button { padding:8px 11px; flex-shrink:0; font-size:.73rem; }
+.phone-section-title { font-size:.82rem; color:#dbeafe; font-weight:700; margin-bottom:2px; }
+.phone-services { display:grid; gap:7px; }
+.phone-service { background:#0b1627; border:1px solid rgba(148,163,184,.16); padding:10px 11px; border-radius:10px; display:flex; align-items:center; justify-content:space-between; gap:8px; min-width:0; }
+.phone-service-main { border-color:rgba(56,189,248,.42); background:#10233b; }
+.phone-service > div { display:grid; gap:3px; min-width:0; }
+.phone-service strong { font-size:.84rem; color:#eff6ff; }
+.phone-service small { font-size:.7rem; color:#94a3b8; line-height:1.5; }
+.phone-link,.phone-link-disabled { white-space:nowrap; font-size:.75rem; font-weight:700; padding:8px 10px; border-radius:8px; text-decoration:none; }
+.phone-link { color:#082f49; background:#7dd3fc; }
+.phone-link:hover,.phone-link:focus-visible { background:#bae6fd; }
+.phone-link-disabled { color:#718198; background:#1e293b; }
+.phone-invalid { color:#fda4af; font-size:.83rem; line-height:1.5; overflow-wrap:anywhere; }
+.phone-api-details { background:#0b1627; border:1px solid rgba(148,163,184,.2); border-radius:11px; padding:11px 12px; }
+.phone-api-details summary { cursor:pointer; color:#dbeafe; font-size:.84rem; font-weight:700; }
+.phone-api-details summary:focus-visible { outline:2px solid #38bdf8; outline-offset:3px; }
+.phone-api-content { padding-top:12px; display:grid; gap:10px; }
+.phone-free-key-link { font-size:.8rem; color:#7dd3fc; text-decoration:underline; text-underline-offset:3px; }
+.phone-api-form { display:grid; gap:10px; }
+.phone-api-privacy { font-size:.73rem!important; color:#94a3b8!important; }
+.phone-result { background:#12243b; border:1px solid rgba(125,211,252,.25); border-radius:12px; display:grid; gap:8px; padding:12px; }
+.phone-result > small { color:#9cb1c8; font-size:.68rem; }
+.phone-result-name { color:#e2e8f0; font-size:1.04rem; overflow-wrap:anywhere; }
+.phone-result-row { display:flex; justify-content:space-between; align-items:baseline; gap:8px; font-size:.75rem; border-top:1px solid rgba(148,163,184,.12); padding-top:6px; }
+.phone-result-row span { color:#94a3b8; }
+.phone-result-row strong { color:#dbeafe; font-weight:600; overflow-wrap:anywhere; text-align:left; }
+.phone-copy-status { font-size:.78rem; color:#86efac; }
+.phone-disclaimer { color:#8192a8; font-size:.72rem; }
+@media (max-width:700px) {
+  .phone-lookup-card { gap:10px; }
+  .phone-normalized { gap:6px; padding:9px; }
+  .phone-service { padding:9px; }
+  .phone-service small { font-size:.68rem; }
+  .phone-link { font-size:.7rem; padding:7px 8px; }
+}
