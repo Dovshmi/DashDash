@@ -173,6 +173,41 @@ function parseEmailTable(doc, events, range, warnings) {
   }
   return tableText;
 }
+// When a mail client loses HTML table structure, recover only rows that are
+// unambiguously a label followed by exactly five non-empty day values.
+// Partial or collapsed rows are intentionally skipped instead of guessing.
+function parsePlainDutyRows(lines,events){
+  const start=lines.findIndex((line)=>/^מנהלי משמרת$/.test(line));
+  if(start<0)return;
+  let section='',parsed=0;
+  function roleForSection(label,context){
+    if(context==='מנהלי משמרת')return /^מנהל משמרת (?:בוקר|ערב)$/.test(label);
+    if(context==='מומחים')return /^מומחה|^08:30$/.test(label);
+    if(context==='רמה 3')return /^תורן (?:בוקר|ערב)/.test(label);
+    if(context==='תגבור רמה 3')return /^סבב מתגברים|^מתגבר הפסקות|^DAY 2$/.test(label);
+    if(context==='מענה SOC')return /^(?:08:00|09:30)$|^תורן ערב/.test(label);
+    if(context==='סייבר')return /^תורן ניטור|^התקנות/.test(label);
+    if(context==='תומכי ווצאפ')return /^(?:08:25|10:00|גיבוי|ירושלים)/.test(label);
+    if(context==='מיילים')return /^08:00/.test(label);
+    if(context==='ניטור')return /^(?:בוקר|ערב|9:00)/.test(label);
+    return false;
+  }
+  for(let i=start;i<lines.length && i<3500;i++){
+    const value=lines[i];
+    if(categoryHeadings.test(value)) {section=value;continue;}
+    if(!section||!roleForSection(value,section))continue;
+    const five=lines.slice(i+1,i+6);
+    if(five.length!==5 || five.some((candidate) =>
+      !candidate || categoryHeadings.test(candidate) || subHeadings.test(candidate) ||
+      roleForSection(candidate,section) || extractDate(candidate) || dayOfWeek(candidate)>=0))continue;
+    five.forEach((assignment,day)=>eventAdd(events,{day,category:categoryFromTitle(value,section),
+      title:section+' · '+value,peopleText:assignment,details:assignment,
+      kind:'duty',source:'טבלת תורנויות מטקסט — מבנה שורה משוער'}));
+    parsed+=5;i+=5;
+  }
+  return parsed;
+}
+
 function parseTextEvents(text,events,range,warnings,format){
   const lines=text.split(/\r?\n/).map(normal).filter(Boolean);
   if(/\[Message clipped\]|View entire message/i.test(text))warnings.push('הטקסט שהועתק מג׳ימייל נקטע. יש להציג את כל ההודעה או להשתמש ב-HTML.');
@@ -204,6 +239,7 @@ function parseTextEvents(text,events,range,warnings,format){
     }
     i=j-1;
   }
+  if(format!=='pdf')parsePlainDutyRows(lines,events);
   warnings.push(format==='pdf' ? 'סדר הטקסט שחולץ מ-PDF עלול להיות שונה ממבנה הטבלה. מידע שלא זוהה נשמר לעיון במקור; מומלץ HTML אם אפשר.' :
     'הדבקת טקסט רגיל אינה שומרת על עמודות טבלאות התורנויות. המידע נשמר לעיון, אך לשיוך מלא מומלץ להדביק HTML או להעלות קובץ HTM.');
 }
