@@ -301,7 +301,7 @@ export function mentionsEmployee(value,employee){
   return source.includes(target);
 }
 export function activitiesForCell(mail,employee,day,verifiedState='unverified') {
-  if(!mail||verifiedState==='mismatch')return {personal:[],dayGeneral:[],otherDay:[],weekly:[],notices:mail?.notices||[]};
+  if(!mail||verifiedState==='mismatch')return {personal:[],dayGeneral:[],otherDay:[],weekly:[],notices:verifiedState==='mismatch'?[]:(mail?.notices||[])};
   const personal=mail.events.filter((event)=>event.day===day && mentionsEmployee([event.peopleText,event.details].join(' '),employee));
   const weekly=mail.events.filter((event)=>mentionsEmployee([event.peopleText,event.details].join(' '),employee));
   const dayGeneral=mail.events.filter((event)=>event.day===day && event.kind==='training' && !event.peopleText && !personal.includes(event));
