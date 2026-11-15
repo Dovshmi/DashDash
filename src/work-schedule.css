@@ -47,3 +47,10 @@
 .schedule-pdf-line p {font-size:.81rem;line-height:1.7;overflow-wrap:anywhere;white-space:pre-wrap;}
 .schedule-pdf-frame {display:block;width:100%;min-height:600px;max-width:100%;border:1px solid #435875;border-radius:8px;background:white;}
 @media (max-width:560px) { .schedule-imports{grid-template-columns:1fr;} .schedule-card{padding:15px;} .schedule-filter-row label,.schedule-search-line label{min-width:100%;} .schedule-section-head{align-items:flex-start;} }
+
+.schedule-paste-actions { display:flex;flex-wrap:wrap;gap:6px;align-items:center; }
+.schedule-paste-actions .schedule-file-button {flex:1;min-width:180px;}
+.schedule-paste-toggle {border:0;background:transparent;color:#c0d8f2;cursor:pointer;font-size:.74rem;text-decoration:underline;padding:5px;}
+.schedule-paste-manual {display:flex;flex-direction:column;gap:7px;}
+.schedule-paste-manual textarea {width:100%;min-height:95px;max-height:220px;resize:vertical;border-radius:8px;border:1px solid #466484;background:#101e32;color:#e5eef9;padding:9px;font:inherit;direction:rtl;unicode-bidi:plaintext;white-space:pre;overflow:auto;}
+.schedule-paste-manual .schedule-file-button:disabled {opacity:.55;cursor:not-allowed;}
