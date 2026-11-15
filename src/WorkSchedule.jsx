@@ -183,7 +183,7 @@ export default function WorkSchedule() {
     setPdfError('');setStatus('');
     try {
       const next = parseScheduleMail(text,{format,filename:'מייל מהלוח'});
-      if(!next.events.length && format === 'html')throw new Error('לא נמצאו אירועים ב-HTML שהועתק. נסה להעתיק את תוכן המייל או להשתמש ב-HTM.');
+      if(!next.events.length && !next.notices.length && !next.week)throw new Error('לא זוהה תוכן של סידור עבודה במייל. בחר את גוף ההודעה והעתק אותו מחדש.');
       clearPdf();
       setMail(next);setMailPasteText('');setShowMailPaste(false);
       setStatus('נמצאו ' + next.events.length + ' פעילויות במייל. הנתונים נוספו לתצוגת המשמרות ללא שינוי סידור האקסל.');
