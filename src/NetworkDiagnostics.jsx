@@ -142,17 +142,17 @@ export default function NetworkDiagnostics() {
       <label className="network-label">{TABS.find(item=>item.id===tab).title}
         <input dir="ltr" spellCheck="false" value={inputs[tab]}
           aria-label={tab==='ip'?'IP address':tab==='dns'?'DNS hostname':'Website URL'}
-          onChange={e=>setInputs(prev=>({...prev,[tab]:e.target.value}))}
+          onChange={e=>{setInputs(prev=>({...prev,[tab]:e.target.value}));setResults(prev=>({...prev,[tab]:null}));setErrors(prev=>({...prev,[tab]:null}));}}
           placeholder={DEFAULT_INPUT[tab]} required />
       </label>
       {tab==='dns' && <div className="diag-options">
         <label className="network-label">סוג רשומה
-          <select value={dnsType} onChange={e=>setDnsType(e.target.value)}>
+          <select value={dnsType} onChange={e=>{setDnsType(e.target.value);setResults(prev=>({...prev,dns:null}));}}>
             {DNS_TYPES.map(type=><option key={type}>{type}</option>)}
           </select>
         </label>
         <label className="network-label">DNS Resolver
-          <select value={resolver} onChange={e=>setResolver(e.target.value)}>
+          <select value={resolver} onChange={e=>{setResolver(e.target.value);setResults(prev=>({...prev,dns:null}));}}>
             <option value="cloudflare">Cloudflare</option>
             <option value="google">Google</option>
             <option value="compare">Compare both</option>
