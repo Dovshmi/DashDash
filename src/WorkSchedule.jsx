@@ -1,18 +1,20 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { cleanText, columnName, findWeekMismatch, getScheduleEntries, guessMapping, pdfLinesFromItems, PDF_CATEGORIES, readScheduleExcel, weekFromText } from './work-schedule-parser.js';
+import { readScheduleClipboard } from './schedule-clipboard.js';
 import './work-schedule.css';
 
 const MAX_VISIBLE = 120;
 function unique(values) { return [...new Set(values.filter(Boolean).map(cleanText))].sort((a, b) => a.localeCompare(b, 'he')); }
 function match(value, query) { return !query || cleanText(value).toLowerCase().includes(cleanText(query).toLowerCase()); }
-function FileDrop({ title, hint, icon, accept, filename, onFile, onClear, required }) {
+function FileDrop({ title, hint, icon, accept, filename, onFile, onClear, required, children }) {
   return <div className="schedule-import">
     <div className="schedule-import-head"><span aria-hidden="true">{icon}</span><div><strong>{title}</strong><small>{hint}</small></div></div>
     {filename ? <div className="schedule-file"><span title={filename}>{filename}</span><button type="button" onClick={onClear} aria-label={'הסר ' + title}>×</button></div>
       : <label className="schedule-file-button">＋ בחר קובץ
         <input aria-label={'בחר ' + title} type="file" accept={accept} onChange={(event) => { const f = event.target.files?.[0]; event.target.value = ''; if (f) onFile(f); }} />
       </label>}
-    {required && <small className="schedule-help">נדרש כדי להציג משמרות</small>}
+    {required && <small className="schedule-help">נדרש קובץ Excel או טבלה שהועתקה</small>}
+    {children}
   </div>;
 }
 
@@ -57,6 +59,8 @@ export default function WorkSchedule() {
   const [loadingPdf, setLoadingPdf] = useState(false);
   const [status, setStatus] = useState('');
   const [excelError, setExcelError] = useState('');
+  const [showClipboardInput, setShowClipboardInput] = useState(false);
+  const [pasteText, setPasteText] = useState('');
   const [pdfError, setPdfError] = useState('');
   const [sheetName, setSheetName] = useState('');
   const [view, setView] = useState('interpreted');
@@ -101,20 +105,44 @@ export default function WorkSchedule() {
   useEffect(() => () => { if (urlRef.current) URL.revokeObjectURL(urlRef.current); }, []);
   const hasPdf = Boolean(pdf || pdfUrl);
 
+  function showExcelResult(result) {
+    setExcel(result); setSheetName(result.sheets[0].name);
+    setView('interpreted'); setQuery(''); setEmployee(''); setManager(''); setDay('');
+    setCustomMapping({}); setMappingType('auto'); setVisibleExcel(MAX_VISIBLE);
+    setStatus('נטענו ' + result.sheets.length + ' גיליונות ו-' + result.cellCount.toLocaleString('he-IL') + ' תאים עם מידע.');
+  }
   async function uploadExcel(file) {
     setLoadingExcel(true); setExcelError(''); setStatus('');
     try {
       if (!/\.xlsx$/i.test(file.name)) throw new Error('יש להעלות קובץ XLSX. קובץ XLS או CSV אינו נתמך.');
-      const result = await readScheduleExcel(file);
-      setExcel(result); setSheetName(result.sheets[0].name);
-      setView('interpreted'); setQuery(''); setEmployee(''); setManager(''); setDay('');
-      setCustomMapping({}); setMappingType('auto'); setVisibleExcel(MAX_VISIBLE);
-      setStatus('נטענו ' + result.sheets.length + ' גיליונות ו-' + result.cellCount.toLocaleString('he-IL') + ' תאים עם מידע.');
+      showExcelResult(await readScheduleExcel(file));
     } catch (error) { setExcelError(error?.message || 'לא הצלחנו לקרוא את קובץ ה-Excel.'); }
     finally { setLoadingExcel(false); }
   }
+  function loadClipboardTable(text) {
+    setExcelError(''); setStatus('');
+    try {
+      const result = readScheduleClipboard(text);
+      showExcelResult(result);
+      setPasteText(''); setShowClipboardInput(false);
+    } catch (error) {
+      setExcelError(error?.message || 'לא הצלחנו לפענח את הטבלה שהועתקה.');
+      setShowClipboardInput(true);
+    }
+  }
+  async function pasteFromClipboard() {
+    try {
+      if (!navigator.clipboard?.readText) throw new Error('הדפדפן אינו תומך בקריאת הלוח ישירות.');
+      const text = await navigator.clipboard.readText();
+      loadClipboardTable(text);
+    } catch {
+      setShowClipboardInput(true);
+      setExcelError('לא ניתן לקרוא את הלוח ישירות. אפשר להדביק ידנית בתיבה שלמטה באמצעות Ctrl+V.');
+    }
+  }
   function clearExcel() {
     setExcel(null); setSheetName(''); setExcelError(''); setEmployee(''); setManager(''); setDay(''); setStatus('');
+    setPasteText(''); setShowClipboardInput(false);
   }
   function clearPdf() {
     requestRef.current += 1;
@@ -154,12 +182,22 @@ export default function WorkSchedule() {
 
   return <section className="card schedule-card">
     <div className="card-heading drag-handle"><div><p className="eyebrow">SHIFT CENTER</p><h2>סידור עבודה ומשימות</h2></div></div>
-    <p className="schedule-intro">Excel למשמרות, ובנוסף — PDF של המייל להנחיות, הדרכות ועבודות יזומות. ה-PDF אינו חובה.</p>
+    <p className="schedule-intro">אפשר להעלות XLSX או להדביק טבלת משמרות שהועתקה מ-Excel. בנוסף ניתן לצרף PDF של המייל להנחיות, הדרכות ועבודות יזומות (אופציונלי).</p>
     <div className="schedule-imports">
-      <FileDrop title="סידור Excel" hint="XLSX · חובה" icon="▦" required accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" filename={excel?.filename} onFile={uploadExcel} onClear={clearExcel} />
+      <FileDrop title="סידור Excel" hint="XLSX או הדבקה מהלוח" icon="▦" required accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" filename={excel?.filename} onFile={uploadExcel} onClear={clearExcel}>
+        <div className="schedule-paste-actions">
+          <button type="button" className="schedule-file-button" onClick={pasteFromClipboard}>📋 הדבק טבלת Excel מהלוח</button>
+          <button type="button" className="schedule-paste-toggle" onClick={() => { setShowClipboardInput((value) => !value); setExcelError(''); }}>{showClipboardInput ? 'סגור הדבקה ידנית' : 'הדבקה ידנית (Ctrl+V)'}</button>
+        </div>
+        <small className="schedule-help">ב-Excel בחר את כל טבלת הסידור, לחץ Ctrl+C ואז על כפתור ההדבקה. העיצוב והצבעים אינם מועתקים.</small>
+        {showClipboardInput && <div className="schedule-paste-manual">
+          <textarea aria-label="תוכן טבלת Excel מהלוח" dir="auto" rows={5} value={pasteText} onChange={(e) => setPasteText(e.target.value)} placeholder="לחץ כאן והדבק את כל טבלת Excel באמצעות Ctrl+V..." />
+          <button type="button" className="schedule-file-button" disabled={!pasteText.trim()} onClick={() => loadClipboardTable(pasteText)}>ייבא את הטבלה שהודבקה</button>
+        </div>}
+      </FileDrop>
       <FileDrop title="מייל / PDF" hint="PDF · אופציונלי" icon="▤" accept=".pdf,application/pdf" filename={pdf?.name || (pdfUrl ? 'PDF נטען' : '')} onFile={uploadPdf} onClear={clearPdf} />
     </div>
-    <p className="schedule-local">🔒 העיבוד מתבצע בדפדפן בלבד. הקבצים אינם נשלחים לשרת ואינם נשמרים בהיסטוריית DashDash.</p>
+    <p className="schedule-local">🔒 העיבוד מתבצע בדפדפן בלבד. הקבצים ותוכן הלוח אינם נשלחים לשרת ואינם נשמרים בהיסטוריית DashDash. הדבקה אפשרית רק אם מדיניות הארגון מתירה העתקה.</p>
     {(loadingExcel || loadingPdf) && <p className="schedule-status" role="status">מעבד קובץ… {status}</p>}
     {excelError && <p className="schedule-error" role="alert">{excelError}</p>}
     {pdfError && <p className="schedule-error" role="alert">{pdfError}</p>}

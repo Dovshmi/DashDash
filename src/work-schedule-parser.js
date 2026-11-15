@@ -228,7 +228,21 @@ export function guessMapping(sheet) {
     const days = entries.filter(([, text]) => dayFromText(text));
     if (days.length >= 2 && (!best || days.length > best.days.length)) best = { type: 'calendar', rowNumber: row.number, days: days.map(([col, text]) => [Number(col), dayFromText(text)]) };
   }
-  if (best) return best;
+  if (best) {
+    // Calendar layouts often have a separate Hebrew header row for team lead,
+    // role and employee name, above the day labels. Keep these fields separate.
+    const headerRows = sheet.rows.filter((row) => row.number <= best.rowNumber).slice(-6);
+    const employeeHeader = /^(?:שם|שם עובד|שם העובד|שם נציג|שם הנציג|עובד|נציג|employee)$/i;
+    const managerHeader = /^(?:מנהל צוות|ראש צוות|מנהל ישיר|team lead|manager)$/i;
+    for (const row of headerRows) {
+      for (const [index, value] of Object.entries(row.cells)) {
+        const text = cleanText(value);
+        if (employeeHeader.test(text)) best.employee = Number(index);
+        if (managerHeader.test(text)) best.manager = Number(index);
+      }
+    }
+    return best;
+  }
   const nameRx = /(?:^|\s)(?:שם עובד|שם נציג|עובד|נציג|employee)(?:\s|$)/i;
   const teamRx = /(?:מנהל צוות|ראש צוות|מנהל ישיר|team lead|manager)/i;
   const shiftRx = /(?:משמרת|שעות עבודה|shift|שעות)/i;
@@ -254,9 +268,15 @@ export function getScheduleEntries(sheet, override = null) {
   const mapping = override || guessMapping(sheet);
   if (mapping.type === 'calendar') {
     return sheet.rows.filter((r) => r.number > mapping.rowNumber).flatMap((row) => {
-      const label = Object.entries(row.cells).filter(([col]) => !mapping.days.some(([idx]) => idx === Number(col))).map(([, val]) => val).join(' · ');
+      const remaining = Object.entries(row.cells).filter(([col]) =>
+        !mapping.days.some(([idx]) => idx === Number(col)) &&
+        Number(col) !== mapping.employee && Number(col) !== mapping.manager
+      ).map(([, val]) => val).join(' · ');
+      const employee = mapping.employee === undefined ? remaining : row.cells[mapping.employee] || '';
+      const manager = mapping.manager === undefined ? '' : row.cells[mapping.manager] || '';
       return mapping.days.filter(([col]) => row.cells[col]).map(([col, day]) => ({
-        source: sheet.name + '!'+ columnName(col) + row.number, day, employee: label, manager: '', shift: row.cells[col], text: label + ' ' + row.cells[col],
+        source: sheet.name + '!'+ columnName(col) + row.number, day, employee, manager,
+        shift: row.cells[col], text: [employee, manager, remaining, row.cells[col]].filter(Boolean).join(' · '),
       }));
     });
   }
