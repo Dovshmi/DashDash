@@ -132,6 +132,20 @@ tbh rumv kf,uc  →  אני רוצה לכתוב
 - Recent and favorite targets can be reselected without scanning. Results can be copied and display common TCP service names; MAC results also export as CSV.
 - The port-check server still enforces public IPv4-only targets and at most 16 TCP ports per request.
 
+### Network Diagnostics (optional: DNS, Website/SSL, IP Intelligence)
+
+Open **＋ הוספה → Network Diagnostics** to add one tabbed widget without altering your existing dashboard layout.
+
+- **DNS:** query A, AAAA, MX, TXT, NS, CNAME and PTR records through Cloudflare or Google DNS-over-HTTPS. Compare providers, view TTLs and DNS response codes, and copy results.
+- **Website / SSL:** inspect public HTTP(S) endpoints on standard ports, their status, redirects, selected response headers, server-observed timing, and TLS certificate validity. Body content is never downloaded.
+- **IP Intelligence:** classify IPv4/IPv6 addresses locally; public addresses can be enriched with ASN, organization, routed prefix, reverse DNS and approximate country using ipctl.io. A provider error is displayed without hiding local classification. Anonymous lookups are subject to the provider's limits.
+
+New API endpoints: POST `/api/dns-lookup`, `/api/website-check`, `/api/ip-intel`. Requests run from **Vercel**, not the user's computer or work LAN. No private-network access, automatic scanning, credentials, history tracking, or new accounts are added.
+
+Website security restrictions: block private/reserved IPv4 and IPv6, pinned DNS lookups, redirect revalidation, HTTP/HTTPS standard ports only, 3-redirect limit, request timeouts and response-header-only checks. External DNS and IP requests disclose the queried public hostname/address to the respective providers; do not enter private work hostnames.
+
+Existing MAC Lookup and Port Check are preserved as separate widgets. New and existing users can add Network Diagnostics manually; it is not enabled by default. The main branch should only be updated after validation of tests, Vercel preview and regression checks.
+
 ### Subnet Calculator
 
 - Offline IPv4/CIDR network, broadcast, masks, wildcard, address range and usable-host counts.
