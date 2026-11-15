@@ -29,7 +29,7 @@ export function externalPhoneLinks(phone) {
   const search = '"' + number + '" OR "' + parsed.e164 + '"';
   return {
     index: 'https://theindex.co.il/phone/' + number + '/',
-    truecaller: 'https://www.truecaller.com/reverse-phone-number-lookup',
+    truecaller: 'https://www.truecaller.com/search/il/' + number,
     me: 'https://me.app/phone-search/',
     nocall: 'https://nocall.io/il',
     google: 'https://www.google.com/search?q=' + encodeURIComponent(search)
