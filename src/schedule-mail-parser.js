@@ -59,13 +59,15 @@ function dateRangeFromBody(body) {
 function extractNotices(body) {
   const notices=[];
   const lines=body.split(/\n/).map(normal).filter(Boolean);
-  for (let i=0;i<lines.length;i++) {
-    const value=lines[i];
-    if (/^(?:חובה להגיע|כמו כן בימים|אילוצים לשבוע|צהוב\s*=|נקודות חשובות)/.test(value)) {
-      if (/^נקודות חשובות/.test(value)) continue;
-      notices.push(value);
-    }
+  for (const line of lines) {
+    if (/^(?:חובה להגיע|כמו כן בימים|אילוצים לשבוע|צהוב\s*=)/.test(line))notices.push(line);
   }
+  // Word/Outlook often divides sentences across <p> tags or hard line breaks.
+  const flat=normal(body);
+  const required=flat.match(/(חובה\s+להגיע\s+למוקד.{0,240}?)(?=כמו\s+כן\s+בימים|סידור\s+עבודה\s+\d{1,2}\s*[/.-]|$)/);
+  const training=flat.match(/(כמו\s+כן\s+בימים\s+של\s+הדרכות.{0,220}?)(?=סידור\s+עבודה\s+\d{1,2}\s*[/.-]|$)/);
+  const deadlines=flat.match(/(אילוצים\s+לשבוע\s+\d{1,2}.{0,120}?)(?=שבת\s+שלום|נקודות\s+חשובות|$)/);
+  for(const found of [required,training,deadlines])if(found?.[1])notices.push(found[1]);
   return uniq(notices).slice(0,25);
 }
 function safeHtmlDocument(text) {
@@ -164,14 +166,14 @@ function parseEmailTable(doc, events, range, warnings) {
       if(!Number.isInteger(offset)||offset<0||offset>6)continue;
       // Skip repeated headers and explanatory rows that span the entire week.
       if(row[col]?.colspan>1 || row[col]?.originCol!==col)continue;
-      const title = role ? category+' · '+role : category+' · '+value.slice(0,105);
+      const title = role && !subHeadings.test(role) ? category+' · '+role : category+' · '+value.slice(0,105);
       eventAdd(events,{day:offset,category:categoryFromTitle(title,category),title,
         details:value,peopleText:value,kind:'duty',source:'טבלאות תורנויות ומשימות'});
     }
   }
   return tableText;
 }
-function parseTextEvents(text,events,range,warnings){
+function parseTextEvents(text,events,range,warnings,format){
   const lines=text.split(/\r?\n/).map(normal).filter(Boolean);
   if(/\[Message clipped\]|View entire message/i.test(text))warnings.push('הטקסט שהועתק מג׳ימייל נקטע. יש להציג את כל ההודעה או להשתמש ב-HTML.');
   let day=-1, inside=false, done=false,location='';
@@ -202,7 +204,8 @@ function parseTextEvents(text,events,range,warnings){
     }
     i=j-1;
   }
-  warnings.push('הדבקת טקסט רגיל אינה שומרת על עמודות טבלאות התורנויות. המידע נשמר לעיון, אך לשיוך מלא מומלץ להדביק HTML או להעלות קובץ HTM.');
+  warnings.push(format==='pdf' ? 'סדר הטקסט שחולץ מ-PDF עלול להיות שונה ממבנה הטבלה. מידע שלא זוהה נשמר לעיון במקור; מומלץ HTML אם אפשר.' :
+    'הדבקת טקסט רגיל אינה שומרת על עמודות טבלאות התורנויות. המידע נשמר לעיון, אך לשיוך מלא מומלץ להדביק HTML או להעלות קובץ HTM.');
 }
 export function parseScheduleMail(value,{format='text',filename='תוכן מהמייל'}={}){
   if(typeof value!=='string'||!value.trim()) throw new Error('לא נמצא תוכן מייל לקריאה.');
@@ -219,7 +222,7 @@ export function parseScheduleMail(value,{format='text',filename='תוכן מהמ
     tableText=parseEmailTable(doc,events,range,warnings);
   }
   const range=dateRangeFromBody(tableText)||dateRangeFromBody(text);
-  if(format!=='html')parseTextEvents(text,events,range,warnings);
+  if(format!=='html')parseTextEvents(text,events,range,warnings,format);
   const notices=extractNotices(text);
   const week=weekFromBody(text,tableText);
   if(!range)warnings.push('לא זוהה טווח תאריכים ברור של סידור העבודה במייל.');
