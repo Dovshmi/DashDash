@@ -19,8 +19,8 @@ const KEY_TAB_STORAGE = 'work-tools:phone-lookup-session-key-v1';
 const AUTO_LOOKUP_DELAY = 1500; // Avoid consuming a free lookup while the user is still typing.
 const KEY_PATTERN = /^nol_[a-zA-Z0-9_-]{8,220}$/;
 const SERVICES = [
-  {id:'index',name:'THE INDEX',note:'ספר טלפונים ישראלי · שתי בדיקות חינם בביקור',main:true},
-  {id:'truecaller',name:'Truecaller',note:'חיפוש שם ודיווחי ספאם · מוגבל'},
+  {id:'index',name:'THE INDEX',note:'ספר טלפונים ישראלי · שתי בדיקות חינם בביקור'},
+  {id:'truecaller',name:'Truecaller',note:'חיפוש ישיר במספר · משתמש מחובר בדפדפן',main:true},
   {id:'nocall',name:'NoCall',note:'דיווחי קהילה על מספרים חשודים'},
   {id:'me',name:'Me',note:'חיפוש חינמי באפליקציה לנייד'},
   {id:'google',name:'Google',note:'חיפוש אזכורים פומביים של המספר'}
@@ -163,11 +163,11 @@ export default function PhoneLookup() {
       {SERVICES.map(service=><div className={'phone-service '+(service.main?'phone-service-main':'')} key={service.id}>
         <div><strong>{service.name}</strong><small>{service.note}</small></div>
         {links ? <a href={links[service.id]} target="_blank" rel="noopener noreferrer" className="phone-link"
-          title={service.id==='index'?'פתיחת דף המספר ישירות':'פותח את שירות החיפוש. ייתכן שיהיה צורך להדביק מספר.'}>
+          title={['index','truecaller'].includes(service.id)?'פתיחת דף המספר ישירות':'פותח את שירות החיפוש. ייתכן שיהיה צורך להדביק מספר.'}>
           {service.main?'פתח תוצאה':'פתח אתר'} ↗
         </a> : <span className="phone-link-disabled">הזן מספר</span>}
       </div>)}
-      {links && <p className="phone-subnote">THE INDEX פותח דף מספר ישיר. בשאר השירותים ייתכן שתצטרך להעתיק ולהדביק את המספר; Me מזהה מספרים באפליקציה, לא באתר החינמי.</p>}
+      {links && <p className="phone-subnote">Truecaller ו־THE INDEX פותחים דף ישיר של המספר. אם כבר התחברת ל־Truecaller באותו דפדפן, האתר ישתמש בהתחברות הקיימת שלך בכפוף למגבלת החיפושים. Me מאפשר חיפוש חינמי באפליקציה.</p>}
     </div>
 
     <details className="phone-api-details">
