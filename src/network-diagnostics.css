@@ -1,0 +1,23 @@
+.network-diag-card { min-width:0; }
+.diag-tabs { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:5px; padding:4px; border-radius:11px; background:#0b1627; }
+.diag-tabs button { min-width:0; padding:9px 5px; background:transparent; color:#93a7c2; border-radius:8px; font-size:.75rem; font-weight:700; cursor:pointer; }
+.diag-tabs button.active { background:#203149; color:#7dd3fc; box-shadow:inset 0 0 0 1px #36516e; }
+.diag-tabs button:focus-visible { outline:2px solid #38bdf8; outline-offset:2px; }
+.diag-form { display:flex; flex-direction:column; gap:10px; }
+.diag-options { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.diag-options select { width:100%; min-width:0; background:#0b1627; border:1px solid #26364d; border-radius:9px; color:#e2e8f0; padding:10px; font:inherit; }
+.diag-results { display:grid; gap:10px; min-height:0; }
+.diag-result-header { display:flex; justify-content:space-between; align-items:center; gap:8px; color:#94a3b8; font-size:.73rem; }
+.diag-result-header .secondary-button { font-size:.75rem; padding:7px 10px; }
+.diag-stack { display:grid; gap:8px; }
+.diag-result-group { display:grid; gap:7px; border:1px solid rgba(148,163,184,.16); border-radius:10px; background:#0b1627; padding:9px; }
+.diag-result-title { color:#7dd3fc; font-size:.84rem; margin:0 0 3px; }
+.diag-field { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:baseline; gap:5px 14px; min-width:0; padding:5px 1px; border-bottom:1px solid rgba(148,163,184,.1); font-size:.8rem; }
+.diag-field span { color:#94a3b8; }
+.diag-field strong { color:#e2e8f0; font-family:'IBM Plex Mono',monospace; font-size:.75rem; font-weight:600; overflow-wrap:anywhere; min-width:0; text-align:left; }
+.diag-records {display:grid;gap:6px;}
+.diag-record {padding:9px; background:#12223a; border-radius:8px; display:grid;gap:4px; min-width:0; overflow-wrap:anywhere; font-family:'IBM Plex Mono',monospace;font-size:.77rem;}
+.diag-record-name,.diag-record small {color:#93a7c2;}
+.diag-record strong {color:#dbeafe;font-weight:600;white-space:pre-wrap;}
+.diag-result-group .network-hint {margin:0;}
+@media(max-width:700px){.diag-tabs button{font-size:.69rem;padding:8px 3px;}.diag-options{grid-template-columns:1fr 1fr;gap:7px;}.diag-field{flex-direction:column;gap:3px;}}
