@@ -6,6 +6,7 @@ import 'react-resizable/css/styles.css';
 import { Analytics } from '@vercel/analytics/react';
 import Notebook from './Notebook.jsx';
 import { MacCheck, PortCheck } from './NetworkWidgets.jsx';
+import PhoneLookup from './PhoneLookup.jsx';
 import SubnetCalculator from './SubnetCalculator.jsx';
 import BackupControls from './BackupControls.jsx';
 import WorkSchedule from './WorkSchedule.jsx';
@@ -32,9 +33,12 @@ const WIDGETS = [
   { id: 'subnet', name: 'Subnet Calculator', description: 'חישוב IPv4/CIDR מקומי' },
   { id: 'mac', name: 'MAC Lookup', description: 'בדיקת יצרן לפי IEEE' },
   { id: 'ports', name: 'Port Check', description: 'בדיקת פורטי TCP ציבוריים' },
+  { id: 'phoneLookup', name: 'Phone Lookup', description: 'חיפוש מספר ישראלי · Truecaller · Me · API חינמי' },
   { id: 'schedule', name: 'סידור עבודה ומשימות', description: 'Excel למשמרות · PDF אופציונלי' },
 ];
 const WIDGET_IDS = WIDGETS.map((widget) => widget.id);
+// The new external lookup is opt-in; old first-use defaults remain unchanged.
+const DEFAULT_DESKTOP_WIDGET_IDS = WIDGET_IDS.filter((id) => id !== 'phoneLookup');
 const DASHBOARD_LAYOUT = [
   { i: 'timer', x: 0, y: 0, w: 6, h: 11, minW: 3, minH: 7 },
   { i: 'translate', x: 6, y: 0, w: 6, h: 11, minW: 3, minH: 7 },
@@ -44,6 +48,7 @@ const DASHBOARD_LAYOUT = [
   { i: 'mac', x: 6, y: 25, w: 6, h: 12, minW: 4, minH: 8 },
   { i: 'ports', x: 0, y: 38, w: 6, h: 12, minW: 4, minH: 8 },
   { i: 'schedule', x: 0, y: 50, w: 12, h: 18, minW: 5, minH: 12 },
+  { i: 'phoneLookup', x: 6, y: 68, w: 6, h: 18, minW: 4, minH: 10 },
 ];
 
 const MOBILE_WIDGET_IDS = ['timer', 'notes', 'drawing'];
@@ -56,6 +61,7 @@ const MOBILE_DASHBOARD_LAYOUT = [
   { i: 'mac', x: 0, y: 63, w: 4, h: 12, minW: 1, minH: 8 },
   { i: 'ports', x: 0, y: 75, w: 4, h: 12, minW: 1, minH: 8 },
   { i: 'schedule', x: 0, y: 87, w: 4, h: 20, minW: 1, minH: 12 },
+  { i: 'phoneLookup', x: 0, y: 110, w: 4, h: 22, minW: 1, minH: 10 },
 ];
 
 const DEFAULT_TIMER_PRESETS = [
@@ -203,11 +209,11 @@ export default function App() {
   const [showTranslationHistory, setShowTranslationHistory] = useState(false);
   const [showTimerHistory, setShowTimerHistory] = useState(false);
   const [showTimeAlertSettings, setShowTimeAlertSettings] = useState(false);
-  const [activeWidgetIds, setActiveWidgetIds] = useState(() => singleNotebookWidgets(normalizeWidgetIds(load(STORAGE.widgets, null), WIDGET_IDS)));
+  const [activeWidgetIds, setActiveWidgetIds] = useState(() => singleNotebookWidgets(normalizeWidgetIds(load(STORAGE.widgets, DEFAULT_DESKTOP_WIDGET_IDS), WIDGET_IDS)));
   const [mobileWidgetIds, setMobileWidgetIds] = useState(() => singleNotebookWidgets(normalizeWidgetIds(load(STORAGE.mobileWidgets, MOBILE_WIDGET_IDS), WIDGET_IDS)));
   const [showWidgetMenu, setShowWidgetMenu] = useState(false);
-  const [layout, setLayout] = useState(() => normalizeDashboardLayout(load(STORAGE.layout, null), DASHBOARD_LAYOUT, activeWidgetIds));
-  const [mobileLayout, setMobileLayout] = useState(() => normalizeDashboardLayout(load(STORAGE.mobileLayout, null), MOBILE_DASHBOARD_LAYOUT, mobileWidgetIds));
+  const [layout, setLayout] = useState(() => normalizeDashboardLayout(load(STORAGE.layout, null), DASHBOARD_LAYOUT, activeWidgetIds).filter((item) => item.i !== 'phoneLookup' || activeWidgetIds.includes('phoneLookup')));
+  const [mobileLayout, setMobileLayout] = useState(() => normalizeDashboardLayout(load(STORAGE.mobileLayout, null), MOBILE_DASHBOARD_LAYOUT, mobileWidgetIds).filter((item) => item.i !== 'phoneLookup' || mobileWidgetIds.includes('phoneLookup')));
   const { width, containerRef, mounted } = useContainerWidth({ initialWidth: 1180 });
   const isMobile = width <= 700;
   const currentWidgetIds = isMobile ? mobileWidgetIds : activeWidgetIds;
@@ -470,6 +476,7 @@ export default function App() {
       </div>}
       {currentWidgetIds.includes('mac') && <div key="mac" data-widget-id="mac" className="dashboard-widget"><button className="widget-remove" onClick={() => removeWidget('mac')} aria-label="הסר בדיקת MAC" title="הסר כלי">×</button><MacCheck /></div>}
       {currentWidgetIds.includes('ports') && <div key="ports" data-widget-id="ports" className="dashboard-widget"><button className="widget-remove" onClick={() => removeWidget('ports')} aria-label="הסר בדיקת פורטים" title="הסר כלי">×</button><PortCheck /></div>}
+      {currentWidgetIds.includes('phoneLookup') && <div key="phoneLookup" data-widget-id="phoneLookup" className="dashboard-widget"><button className="widget-remove" onClick={() => removeWidget('phoneLookup')} aria-label="הסר כלי זיהוי טלפון" title="הסר כלי">×</button><PhoneLookup /></div>}
       {currentWidgetIds.includes('schedule') && <div key="schedule" data-widget-id="schedule" className="dashboard-widget"><button className="widget-remove" onClick={() => removeWidget('schedule')} aria-label="הסר סידור עבודה" title="הסר כלי">×</button><WorkSchedule /></div>}
       </ReactGridLayout>}
     </div>
