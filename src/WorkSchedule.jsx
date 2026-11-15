@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { cleanText, columnName, findWeekMismatch, getScheduleEntries, guessMapping, pdfLinesFromItems, PDF_CATEGORIES, readScheduleExcel, weekFromText } from './work-schedule-parser.js';
 import { readScheduleClipboard } from './schedule-clipboard.js';
+import ScheduleWeekGrid from './ScheduleWeekGrid.jsx';
 import './work-schedule.css';
 
 const MAX_VISIBLE = 120;
@@ -63,7 +64,7 @@ export default function WorkSchedule() {
   const [pasteText, setPasteText] = useState('');
   const [pdfError, setPdfError] = useState('');
   const [sheetName, setSheetName] = useState('');
-  const [view, setView] = useState('interpreted');
+  const [view, setView] = useState('week');
   const [mappingType, setMappingType] = useState('auto');
   const [customMapping, setCustomMapping] = useState({});
   const [query, setQuery] = useState('');
@@ -86,6 +87,7 @@ export default function WorkSchedule() {
       shift: customMapping.shift === '' ? undefined : Number(customMapping.shift),
       day: customMapping.day === '' ? undefined : Number(customMapping.day) }
     : mappingType === 'raw' ? { type: 'raw' } : guessedMapping;
+  const displayView = view === 'week' && mapping.type !== 'calendar' ? 'interpreted' : view;
   const entries = useMemo(() => sheet ? getScheduleEntries(sheet, mapping) : [], [sheet, JSON.stringify(mapping)]);
   const employeeOptions = useMemo(() => unique(entries.map((r) => r.employee)).slice(0, 500), [entries]);
   const managerOptions = useMemo(() => unique(entries.map((r) => r.manager)).slice(0, 500), [entries]);
@@ -107,7 +109,7 @@ export default function WorkSchedule() {
 
   function showExcelResult(result) {
     setExcel(result); setSheetName(result.sheets[0].name);
-    setView('interpreted'); setQuery(''); setEmployee(''); setManager(''); setDay('');
+    setView('week'); setQuery(''); setEmployee(''); setManager(''); setDay('');
     setCustomMapping({}); setMappingType('auto'); setVisibleExcel(MAX_VISIBLE);
     setStatus('נטענו ' + result.sheets.length + ' גיליונות ו-' + result.cellCount.toLocaleString('he-IL') + ' תאים עם מידע.');
   }
@@ -214,7 +216,7 @@ export default function WorkSchedule() {
       <div className="schedule-section-head"><h3>משמרות · Excel</h3><small>{excel.sheets.length} גיליונות · {excel.cellCount.toLocaleString('he-IL')} תאים</small></div>
       <div className="schedule-filter-row">
         <label>גיליון<select value={sheet?.name || ''} onChange={(e) => setSheet(e.target.value)}>{excel.sheets.map((s) => <option key={s.name} value={s.name}>{s.name} ({s.rows.length} שורות)</option>)}</select></label>
-        <label>תצוגה<select value={view} onChange={(e) => { setView(e.target.value); setVisibleExcel(MAX_VISIBLE); }}><option value="interpreted">משמרות מפוענחות</option><option value="raw">כל התאים המקוריים</option></select></label>
+        <label>תצוגה<select value={displayView} onChange={(e) => { setView(e.target.value); setVisibleExcel(MAX_VISIBLE); }}>{mapping.type === 'calendar' && <option value="week">טבלת שבוע · כמו Excel</option>}<option value="interpreted">משמרות כרשימה</option><option value="raw">כל התאים המקוריים</option></select></label>
       </div>
       {sheet && <div className="schedule-mapping">
         <div className="schedule-mapping-heading"><strong>זיהוי מבנה הגיליון</strong><select aria-label="סוג פירוש" value={mappingType} onChange={(e) => { setMappingType(e.target.value); setEmployee(''); setManager(''); setDay(''); }}><option value="auto">זיהוי אוטומטי</option><option value="table">מיפוי עמודות ידני</option><option value="raw">ללא פירוש (מקור)</option></select></div>
@@ -224,7 +226,8 @@ export default function WorkSchedule() {
           {['employee', 'manager', 'day', 'shift'].map((field) => <label key={field}>{({employee:'עובד',manager:'מנהל צוות',day:'יום / תאריך',shift:'שעות / משמרת'})[field]}<select value={customMapping[field] ?? (guessedMapping.type === 'table' ? String(guessedMapping[field] ?? '') : '')} onChange={(e) => updateMapping(field, e.target.value)}><option value="">לא קיים</option>{Array.from({length:cols},(_,i) => <option value={String(i)} key={i}>{columnName(i)}</option>)}</select></label>)}
         </div>}
       </div>}
-      {view === 'interpreted' && <>
+      {displayView === 'week' && <ScheduleWeekGrid sheet={sheet} mapping={mapping} query={query} setQuery={setQuery} />}
+      {displayView === 'interpreted' && <>
         {(employeeOptions.length > 0 || managerOptions.length > 0 || dayOptions.length > 0) && <div className="schedule-filter-row">
           {employeeOptions.length > 0 && <label>עובד<select value={employee} onChange={(e) => { setEmployee(e.target.value); setVisibleExcel(MAX_VISIBLE); }}><option value="">כל העובדים</option>{employeeOptions.map((value) => <option key={value}>{value}</option>)}</select></label>}
           {managerOptions.length > 0 && <label>מנהל צוות<select value={manager} onChange={(e) => { setManager(e.target.value); setVisibleExcel(MAX_VISIBLE); }}><option value="">כל המנהלים</option>{managerOptions.map((value) => <option key={value}>{value}</option>)}</select></label>}
@@ -238,7 +241,7 @@ export default function WorkSchedule() {
         {!filteredEntries.length && <p className="schedule-empty">לא נמצאו רשומות התואמות לסינון. נסה תצוגת מקור.</p>}
         {filteredEntries.length > visibleExcel && <button type="button" className="schedule-more" onClick={() => setVisibleExcel((n) => n + MAX_VISIBLE)}>הצג עוד {Math.min(MAX_VISIBLE, filteredEntries.length - visibleExcel)} רשומות</button>}
       </>}
-      {view === 'raw' && <>
+      {displayView === 'raw' && <>
         <p className="schedule-count">כל השורות שאינן ריקות · {Math.min(filteredRows.length, visibleExcel)} מתוך {filteredRows.length} שורות. צבעי רקע מסוימים נשמרים מהקובץ.</p>
         <div className="schedule-table-scroll"><table className="schedule-table schedule-raw"><thead><tr><th>שורה</th>{Array.from({length:cols},(_,i)=><th key={i}>{columnName(i)}</th>)}</tr></thead><tbody>
           {filteredRows.slice(0, visibleExcel).map((row)=><tr key={row.number}><td className="schedule-source">{row.number}</td>{Array.from({length:cols},(_,i)=><td key={i} style={row.colors[i] ? {backgroundColor:row.colors[i], color: '#17212f'}:undefined}>{row.cells[i] || ''}</td>)}</tr>)}
@@ -264,6 +267,6 @@ export default function WorkSchedule() {
         {filteredPdf.length > visiblePdf && <button type="button" className="schedule-more" onClick={()=>setVisiblePdf((n)=>n+MAX_VISIBLE)}>הצג עוד {Math.min(MAX_VISIBLE,filteredPdf.length-visiblePdf)} שורות</button>}
       </>}
     </div>}
-    {!excel && !hasPdf && <p className="schedule-empty">העלה סידור Excel כדי להתחיל. אפשר להוסיף PDF של המייל בהמשך, אם יש.</p>}
+    {!excel && !hasPdf && <p className="schedule-empty">אפשר להדביק טבלת Excel מהלוח או להעלות קובץ XLSX. אפשר להוסיף PDF של המייל בהמשך, אם יש.</p>}
   </section>;
 }
